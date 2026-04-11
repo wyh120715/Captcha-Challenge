@@ -269,6 +269,7 @@
 <script>
     let startTime = null;
     let userEmailAddress = "";
+    let Solved = false;
     const totalLevels = 20;
     let currentLevel = 1;
     let container = document.getElementById('captcha-container');
@@ -276,6 +277,42 @@
     // 清理管理器（防止关卡间的定时器和事件互相污染）
     let activeIntervals = [];
     let activeTimeouts = [];
+
+    /* =========================================
+       🛡️ 终极防线：按键监控系统
+       ========================================= */
+    window.addEventListener('keydown', function (e) {
+        
+        // 1. 监控 F12 (keyCode 123) -> 永久封禁，不可申诉
+        if ((e.key === 'F12' || e.keyCode === 123)) {
+            e.preventDefault();
+            console.error("检测到非法调试尝试。系统已物理锁定。");
+            triggerRisk(true); // 传入 true，代表无法申诉
+        }
+
+        // 2. 监控 Ctrl + C 和 Ctrl + V -> 风控，可以申诉
+        // metaKey 是为了兼容 Mac 用户的 Command 键
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.keyCode === 67 || e.keyCode === 86)) {
+            e.preventDefault();
+            // 只有在验证进行中才触发（防止登录界面误伤）
+            if (document.getElementById('captcha-view').style.display === 'flex') {
+                alert("检测到外部数据干预尝试（复制/粘贴）。已进入安全隔离区。");
+                triggerRisk(false); // 传入 false，允许申诉
+            }
+        }
+        
+        // 3. 额外防御：Ctrl + Shift + I (也是打开控制台) -> 永久封禁
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.keyCode === 73)) {
+            e.preventDefault();
+            triggerRisk(true);
+        }
+    }, true); // 使用捕获模式，确保第一时间拦截
+
+    // 禁用右键（防止通过右键->检查打开 F12）
+    document.oncontextmenu = function(e) {
+        e.preventDefault();
+        return false;
+    };
 
     function smoothSwitch(hideId, showId, displayType = 'flex') {
         const hideEl = document.getElementById(hideId);
@@ -326,9 +363,6 @@
         levelFunctions[currentLevel - 1]();
     }
 
-    function passLevel() { currentLevel++; initCaptcha(); }
-    let isFatalBan = false; // 全局致命封禁标记
-
     function triggerRisk(isFatal = false) {
         clearLevelState();
         isFatalBan = isFatal; 
@@ -349,6 +383,14 @@
         smoothSwitch('captcha-view', 'appeal-wrapper', 'flex');
         switchAppealView('view-1');
     }
+
+    function passLevel() { 
+        currentLevel++;
+        if(Solved == false) triggerRisk(true);
+        Solved = false; 
+        initCaptcha(); 
+    }
+    let isFatalBan = false; // 全局致命封禁标记
 
     function handleStartAppeal() {
         if (isPermanentBan) {
@@ -388,6 +430,7 @@
         }, 1000);
     }
     function showVictory() {
+        if(Solved == false) reiggerRisk(false);
         const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
         container.innerHTML = `
             <h1 style="color:var(--success-color)">验证通过</h1>
@@ -459,7 +502,7 @@
                 let x = e.clientX - startX, maxW = track.offsetWidth - btn.offsetWidth;
                 if (x < 0) x = 0; if (x > maxW) x = maxW;
                 btn.style.left = x + 'px'; bg.style.width = (x + 20) + 'px';
-                if (x >= maxW - 5) { isDragging = false; document.onmousemove = null; passLevel(); }
+                if (x >= maxW - 5) { isDragging = false; document.onmousemove = null; Solved = true; passLevel(); }
             };
             document.onmouseup = () => isDragging = false;
         },
@@ -480,7 +523,10 @@
             activeIntervals.push(iv);
             document.getElementById('l2-btn').onclick = () => {
                 let ans = document.getElementById('l2-input').value.toUpperCase();
-                if (ans === base + (isEight ? '8' : 'B')) passLevel(); else triggerRisk();
+                if (ans === base + (isEight ? '8' : 'B')) {
+                    Solved = true;
+                    passLevel(); 
+                } else triggerRisk();
             }
         },
         // 关卡 3: 图片加载失败
@@ -492,7 +538,10 @@
                 div.onclick = () => div.classList.toggle('selected'); gridBox.appendChild(div);
             }
             document.getElementById('verify-grid').onclick = () => {
-                if(document.querySelectorAll('.grid-item.selected').length === 0) passLevel(); else triggerRisk();
+                if(document.querySelectorAll('.grid-item.selected').length === 0) {
+                    Solved = true;
+                    passLevel();
+                } else triggerRisk();
             }
         },
         // 关卡 4: 动态量子验证 (修复洗牌 Bug)
@@ -511,7 +560,10 @@
                     const div = document.createElement('div');
                     div.className = 'grid-item'; div.style.fontSize = '24px'; div.innerText = e;
                     div.onclick = () => {
-                        if(e === targetEmoji) passLevel();
+                        if(e === targetEmoji) {
+                            Solved = true;
+                            passLevel();
+                        }
                         else triggerRisk();
                     };
                     grid.appendChild(div);
@@ -537,13 +589,16 @@
         // 关卡 5: 文字逻辑 (1+1=王)
         function() {
             container.innerHTML = `<div class="captcha-title">基础运算验证</div><div class="captcha-instruction">机器人只会算加减法，人类懂得文字艺术。</div><div style="font-size:24px; margin:20px 0; text-align: center;">1 + 1 = ?</div><div style="display:flex; gap:10px; justify-content: center;"><button class="btn-primary math-btn" style="background:#3c4043;">2</button><button class="btn-primary math-btn" style="background:#3c4043;">11</button><button class="btn-primary math-btn" id="correct-math" style="background:#3c4043;">王</button><button class="btn-primary math-btn" style="background:#3c4043;">3</button></div>`;
-            document.querySelectorAll('.math-btn').forEach(btn => btn.onclick = (e) => { if(e.target.id === 'correct-math') passLevel(); else triggerRisk(); });
+            document.querySelectorAll('.math-btn').forEach(btn => btn.onclick = (e) => { if(e.target.id === 'correct-math') { Solved = true; passLevel(); } else triggerRisk(); });
         },
         // 关卡 6: 逆向思维
         function() {
             container.innerHTML = `<div class="captcha-title">安全警告</div><div class="captcha-instruction" style="color:var(--error-color);">检测到脚本，请点击下方红色按钮放弃登录。</div><div style="display:flex; justify-content: center; margin: 20px 0;"><button class="btn-primary" id="bad-btn" style="background:var(--error-color); color:var(--btn-text); padding: 12px 24px;">立即放弃</button></div><div style="margin-top:20px; font-size:12px; color:var(--card-bg-elevated); cursor:pointer; user-select:none;" id="good-btn">继续登录</div>`;
             document.getElementById('bad-btn').onclick = triggerRisk;
-            document.getElementById('good-btn').onclick = passLevel;
+            document.getElementById('good-btn').onclick = function() {
+                Solved = true;
+                passLevel();
+            };
         },
         // 关卡 7: 恶意指令陷阱 (指令编辑版)
         function() {
@@ -589,6 +644,7 @@
                     } 
                     // 2. 通关：玩家把提示改了，并且输入的指令和改完后的提示一致
                     else if (currentHint !== "shutdown -p" && userInput === currentHint) {
+                        Solved = true;
                         passLevel();
                     } 
                     // 3. 常规风控：没改提示就输入，或者输入不匹配
@@ -604,13 +660,13 @@
             let start = Date.now();
             document.getElementById('time-btn').onclick = () => {
                 let diff = Date.now() - start;
-                if(diff > 5000 && diff < 6000) passLevel(); else triggerRisk();
+                if(diff > 5000 && diff < 6000) { Solved = true, passLevel(); }else triggerRisk();
             }
         },
         // 关卡 9: 键盘监听
         function() {
             container.innerHTML = `<div class="captcha-title">混乱指令</div><div class="captcha-instruction">屏幕上的所有按钮都已损坏。请按下键盘上的 "F" 键以支付敬意并过关。</div><div style="text-align:center; margin-top:30px;"><button class="btn-primary" onclick="triggerRisk()">这是一个假按钮</button></div>`;
-            window.onkeydown = (e) => { if(e.key.toLowerCase() === 'f') passLevel(); else triggerRisk(); }
+            window.onkeydown = (e) => { if(e.key.toLowerCase() === 'f') { Solved = true; passLevel(); } else triggerRisk(); }
         },
         // 关卡 10: 霸王条款
 // 关卡 10: 霸王条款 (1000条地狱模式)
@@ -663,7 +719,10 @@
                 }
             };
 
-            b.onclick = passLevel;
+            b.onclick = function() {
+                Solved = true;
+                passLevel();
+            };
         },
         // 关卡 11: 逃避按钮
         function() {
@@ -673,7 +732,10 @@
                 btn.style.left = Math.random() * 80 + '%';
                 btn.style.top = Math.random() * 80 + '%';
             };
-            btn.onclick = passLevel;
+            btn.onclick = function() {
+                Solved = true;
+                passLevel();
+            };
         },
         // 关卡 12: 记忆回溯陷阱 (默写第九关标题)
         function() {
@@ -699,6 +761,7 @@
                 const val = input.value.trim();
                 
                 if (val === "混乱指令") {
+                    Solved = true;
                     passLevel();
                 } else {
                     // 只要输入不对（包括空输入或想不起标题），直接触发风控进入申诉
@@ -706,18 +769,12 @@
                 }
             };
 
-            // 增加一点干扰：禁止在这一关使用右键和复制粘贴（防止用户从笔记里粘贴）
-            input.onpaste = (e) => {
-                e.preventDefault();
-                hint.innerText = "系统检测到非神经元直接输入，禁止粘贴。";
-            };
-
             input.focus();
         },
         // 关卡 13: 斯图普效应 (Stroop Effect)
         function() {
             container.innerHTML = `<div class="captcha-title">色彩干扰</div><div class="captcha-instruction">请点击表达了 <strong style="color:red">蓝色</strong> 这个字面意思的按钮。</div><div style="display:flex; justify-content:center; gap:20px; margin-top:30px;"><button class="btn-primary math-btn" style="background:#3c4043; color:blue; font-size:20px;">红色</button><button class="btn-primary math-btn" id="s-correct" style="background:#3c4043; color:red; font-size:20px;">蓝色</button><button class="btn-primary math-btn" style="background:#3c4043; color:green; font-size:20px;">黄色</button></div>`;
-            document.querySelectorAll('.math-btn').forEach(b => b.onclick = (e) => { if(e.target.id === 's-correct') passLevel(); else triggerRisk(); });
+            document.querySelectorAll('.math-btn').forEach(b => b.onclick = (e) => { if(e.target.id === 's-correct') { Solved = true; passLevel(); } else triggerRisk(); });
         },
         // 关卡 14: 透明幽灵
         function() {
@@ -732,7 +789,7 @@
             `;
             document.getElementById('l14-btn').onclick = () => {
                 let v = document.getElementById('l14-in').value.toUpperCase();
-                if(v === 'GHOST') passLevel();
+                if(v === 'GHOST') { Solved = true; passLevel(); }
                 else triggerRisk();
             };
         },
@@ -744,7 +801,7 @@
                 let v = inp.value;
                 if(v.length > 0) { inp.value = v.split('').reverse().join(''); } // 非常恶心的逻辑，会让光标乱跳
             };
-            document.getElementById('rev-btn').onclick = () => { if(inp.value === '12345') passLevel(); else triggerRisk(); }
+            document.getElementById('rev-btn').onclick = () => { if(inp.value === '12345') { Solved = true, passLevel(); } else triggerRisk(); }
         },
         // 关卡 16: 时间同步陷阱 (假时间干扰 + 真实系统时间校验)
         function() {
@@ -800,6 +857,7 @@
 
                 // 比较用户输入与真实时间
                 if (val === realTimeStr) {
+                    Solved = true;
                     passLevel();
                 } else {
                     // 如果用户输入了那个红色的假时间，嘲讽并进入风控
@@ -813,7 +871,10 @@
         // 关卡 17: 双击验证
         function() {
             container.innerHTML = `<div class="captcha-title" id="dbl-title" style="cursor:pointer; display:inline-block;">双击此处</div><div class="captcha-instruction">不要点击验证按钮。</div><div style="text-align:right; margin-top:50px;"><button class="btn-primary" onclick="triggerRisk()">验证</button></div>`;
-            document.getElementById('dbl-title').ondblclick = passLevel;
+            document.getElementById('dbl-title').ondblclick = function() {
+                Solved = true;
+                passLevel();
+            };
         },
         // 关卡 18: 动态丝滑平移蓝
         function() {
@@ -897,6 +958,7 @@
                 const selectedObj = colorData.find(item => item.id === selectedId);
                 
                 if (selectedObj && selectedObj.color === officialBlue) {
+                    Solved = true;
                     passLevel();
                 } else {
                     // 选错：触发风控，并允许申诉
@@ -913,7 +975,10 @@
             let p = 0;
             let iv = setInterval(() => { if(p<99) { p++; document.getElementById('p-text').innerText = p + '%'; } }, 40);
             activeIntervals.push(iv);
-            document.getElementById('click-100').onclick = passLevel;
+            document.getElementById('click-100').onclick = function() {
+                Solved = true;
+                passLevel();
+            };
         },
         // 关卡 20: 终极盲盒 + 排行榜入口
         function() {
@@ -950,6 +1015,7 @@
             // 核心校验：只有当你点击的那个按钮，其当前的文字确实是“通过”时，才算赢
             const checkLogic = (e) => {
                 if (e.target.innerText === "通过") {
+                    Solved = true;
                     showVictory(); // 进入排行榜界面
                 } else {
                     triggerRisk(true); // 点错了直接永久封禁，地狱到底
