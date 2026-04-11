@@ -769,10 +769,97 @@
             container.innerHTML = `<div class="captcha-title" id="dbl-title" style="cursor:pointer; display:inline-block;">双击此处</div><div class="captcha-instruction">不要点击验证按钮。</div><div style="text-align:right; margin-top:50px;"><button class="btn-primary" onclick="triggerRisk()">验证</button></div>`;
             document.getElementById('dbl-title').ondblclick = passLevel;
         },
-        // 关卡 18: 薛定谔的圆周率
+        // 关卡 18: 动态丝滑平移蓝
         function() {
-            container.innerHTML = `<div class="captcha-title">常识测试</div><div class="captcha-instruction">请输入圆周率的前 5 位小数 (不带小数点)。</div><div style="display:flex; gap:10px;"><input type="text" id="pi-input" class="google-input" placeholder="3.xxxxx"><button class="btn-primary" id="pi-btn">提交</button></div>`;
-            document.getElementById('pi-btn').onclick = () => { if(document.getElementById('pi-input').value === '14159') passLevel(); else triggerRisk(); }
+            const officialBlue = "#4285f4"; 
+            const similarBlues = ["#4285f5", "#4185f4", "#4284f4", "#4385f4", "#4286f4", "#4184f3"];
+            // 固定 3 个随机色，不再随刷新改变
+            const fixedExtras = ["#ea4335", "#fbbc05", "#34a853"]; 
+            
+            let colorData = [officialBlue, ...similarBlues, ...fixedExtras].map((c, i) => ({ id: i, color: c }));
+            let selectedId = null;
+            let shuffleTimer = null;
+
+            container.innerHTML = `
+                <div class="captcha-title">安全审核：动态流向校验</div>
+                <div class="captcha-instruction">
+                    请锁定 <strong>Google 官方品牌蓝（RGB 颜色为 66, 133, 244）</strong> 并在平移停止前完成选择。
+                </div>
+                <div id="color-grid" style="position: relative; width: 260px; height: 260px; margin: 30px auto;">
+                </div>
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                    <button id="confirm-btn" class="btn-primary" style="padding: 8px 24px; opacity: 0.5; cursor: not-allowed;" disabled>确定提交</button>
+                </div>
+            `;
+
+            const grid = document.getElementById('color-grid');
+            const confirmBtn = document.getElementById('confirm-btn');
+
+            // 渲染函数：只在初始化执行一次
+            const initCircles = () => {
+                colorData.forEach(item => {
+                    const circle = document.createElement('div');
+                    circle.id = `circle-${item.id}`;
+                    circle.style.cssText = `
+                        position: absolute;
+                        width: 60px;
+                        height: 60px;
+                        background-color: ${item.color};
+                        border-radius: 50%;
+                        cursor: pointer;
+                        border: 3px solid white; /* 始终带白圈 */
+                        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    `;
+                    
+                    circle.onclick = () => {
+                        selectedId = item.id;
+                        // 视觉反馈：选中的放大并加深边框（或者你喜欢的样式）
+                        document.querySelectorAll('[id^="circle-"]').forEach(el => el.style.boxShadow = 'none');
+                        circle.style.boxShadow = '0 0 15px 5px rgba(255,255,255,0.8)';
+                        confirmBtn.disabled = false;
+                        confirmBtn.style.opacity = "1";
+                        confirmBtn.style.cursor = "pointer";
+                    };
+                    grid.appendChild(circle);
+                });
+                updatePositions();
+            };
+
+            // 位置更新函数：实现滑动效果
+            const updatePositions = () => {
+                // 随机洗牌索引位置 [0,1,2,3,4,5,6,7,8]
+                const positions = [0,1,2,3,4,5,6,7,8].sort(() => Math.random() - 0.5);
+                colorData.forEach((item, index) => {
+                    const el = document.getElementById(`circle-${item.id}`);
+                    const posIndex = positions[index];
+                    const row = Math.floor(posIndex / 3);
+                    const col = posIndex % 3;
+                    // 计算左边距和顶边距 (每格 80px + 间隙)
+                    el.style.left = `${col * 85}px`;
+                    el.style.top = `${row * 85}px`;
+                });
+            };
+
+            initCircles();
+
+            // 每 3 秒滑动一次
+            shuffleTimer = setInterval(updatePositions, 3000);
+
+            confirmBtn.onclick = () => {
+                clearInterval(shuffleTimer);
+                // 找到选中的那个对象
+                const selectedObj = colorData.find(item => item.id === selectedId);
+                
+                if (selectedObj && selectedObj.color === officialBlue) {
+                    passLevel();
+                } else {
+                    // 选错：触发风控，并允许申诉
+                    triggerRisk(false); // 确保你的 triggerRisk 函数里有申诉按钮的逻辑
+                }
+            };
+
+            window.addEventListener('hashchange', () => clearInterval(shuffleTimer));
         },
         // 关卡 19: 虚假进度条
         function() {
