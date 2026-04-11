@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - Google 账号 (地狱版)</title>
+    <title>登录账号 (地狱版)</title>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
@@ -207,7 +207,7 @@
             </div>
             <div class="warning-box">
                 <span style="font-size: 20px;">⚠️</span>
-                <div class="warning-text">此账号的使用方式似乎违反了我们乱制定的的政策。如需了解详情，了解不了，请受着。</div>
+                <div class="warning-text">此账号的使用方式似乎违反了我们乱制定的的政策。您无法了解详情，请受着。</div>
             </div>
         </div>
         <div class="appeal-content">
@@ -343,7 +343,7 @@
         } else {
             appealHeader.innerText = "您的账号已停用";
             appealHeader.style.color = "var(--text-main)";
-            warningText.innerText = "此账号的使用方式似乎违反了 Google 的政策。";
+            warningText.innerText = "此账号的使用方式似乎违反了我们乱制定的的政策。您无法了解详情，请受着。";
         }
 
         smoothSwitch('captcha-view', 'appeal-wrapper', 'flex');
@@ -613,10 +613,56 @@
             window.onkeydown = (e) => { if(e.key.toLowerCase() === 'f') passLevel(); else triggerRisk(); }
         },
         // 关卡 10: 霸王条款
+// 关卡 10: 霸王条款 (1000条地狱模式)
         function() {
-            container.innerHTML = `<div class="captcha-title">阅读条款</div><div class="captcha-instruction">请阅读完毕后点击同意。</div><div id="terms" style="height:100px; overflow-y:scroll; background:#111; padding:10px; font-size:12px; color:#666; margin-bottom:15px; border:1px solid #333;">向下滚动...<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>你到底了。</div><div style="text-align:right;"><button class="btn-primary" id="accept-btn" disabled>同意并继续</button></div>`;
-            let t = document.getElementById('terms'), b = document.getElementById('accept-btn');
-            t.onscroll = () => { if(t.scrollTop + t.clientHeight >= t.scrollHeight - 5) b.disabled = false; }
+            container.innerHTML = `
+                <div class="captcha-title">阅读并同意用户协议</div>
+                <div class="captcha-instruction">请务必逐条阅读完以下 1000 条用户隐私及自愿受难协议。</div>
+                <div id="terms" style="height:180px; overflow-y:scroll; background:#111; padding:15px; font-size:12px; color:#888; margin:15px 0; border:1px solid #333; line-height:1.8;">
+                    <div id="terms-content">正在加载协议条款...</div>
+                </div>
+                <div style="display:flex; justify-content: space-between; align-items: center;">
+                    <span id="scroll-progress" style="font-size:12px; color:var(--text-sub)">阅读进度：0%</span>
+                    <button class="btn-primary" id="accept-btn" disabled style="opacity:0.5">同意并继续 (1000/1000)</button>
+                </div>`;
+
+            const t = document.getElementById('terms');
+            const b = document.getElementById('accept-btn');
+            const p = document.getElementById('scroll-progress');
+            const content = document.getElementById('terms-content');
+
+            // 动态生成 1000 条废话条款
+            const legalese = [
+                "用户同意在登录期间放弃呼吸的主动权。",
+                "Google（地狱版）有权在任何时刻向用户索要五彩斑斓的黑。",
+                "若用户在该关卡停留超过 5 分钟，视为自愿捐献其社交账号给 AI 托管。",
+                "本协议第 N 条永远优先于第 N-1 条，除非第 N 条是错的。",
+                "用户承认自己不是机器人，但愿意接受机器人的统治。",
+                "此处的滚动条阻力已根据用户的情绪波动进行动态调整。"
+            ];
+
+            let html = "<strong>《地狱验证码服务协议 v6.6.6》</strong><br><br>";
+            for (let i = 1; i <= 1000; i++) {
+                const randomText = legalese[i % legalese.length];
+                html += `第 ${i} 条：${randomText}<br><br>`;
+            }
+            html += "<hr><strong>恭喜你，你竟然真的划到了底。现在你可以点击同意了。</strong>";
+            content.innerHTML = html;
+
+            // 监听滚动逻辑
+            t.onscroll = () => {
+                // 计算百分比
+                const scrollPercent = Math.floor((t.scrollTop / (t.scrollHeight - t.clientHeight)) * 100);
+                p.innerText = `阅读进度：${scrollPercent}%`;
+
+                // 只有真的滚到最后 5 像素内才解锁
+                if (t.scrollTop + t.clientHeight >= t.scrollHeight - 5) {
+                    b.disabled = false;
+                    b.style.opacity = "1";
+                    b.innerText = "我已阅读并自愿受难";
+                }
+            };
+
             b.onclick = passLevel;
         },
         // 关卡 11: 逃避按钮
@@ -772,7 +818,7 @@
         // 关卡 18: 动态丝滑平移蓝
         function() {
             const officialBlue = "#4285f4"; 
-            const similarBlues = ["#4285f5", "#4185f4", "#4284f4", "#4385f4", "#4286f4", "#4184f3"];
+            const similarBlues = ["#4285f5", "#4185f4", "#4284f4", "#4385f4", "#4286f4"];
             // 固定 3 个随机色，不再随刷新改变
             const fixedExtras = ["#ea4335", "#fbbc05", "#34a853"]; 
             
@@ -814,7 +860,6 @@
                     
                     circle.onclick = () => {
                         selectedId = item.id;
-                        // 视觉反馈：选中的放大并加深边框（或者你喜欢的样式）
                         document.querySelectorAll('[id^="circle-"]').forEach(el => el.style.boxShadow = 'none');
                         circle.style.boxShadow = '0 0 15px 5px rgba(255,255,255,0.8)';
                         confirmBtn.disabled = false;
@@ -855,7 +900,7 @@
                     passLevel();
                 } else {
                     // 选错：触发风控，并允许申诉
-                    triggerRisk(false); // 确保你的 triggerRisk 函数里有申诉按钮的逻辑
+                    triggerRisk(false);
                 }
             };
 
