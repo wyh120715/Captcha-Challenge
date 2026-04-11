@@ -267,6 +267,7 @@
 </div>
 
 <script>
+    let startTime = null;
     let userEmailAddress = "";
     const totalLevels = 20;
     let currentLevel = 1;
@@ -321,7 +322,6 @@
         container.classList.remove('slide-in');
         void container.offsetWidth; 
         container.classList.add('slide-in');
-        
         // 按照顺序加载关卡
         levelFunctions[currentLevel - 1]();
     }
@@ -387,6 +387,52 @@
             if (timeLeft <= 0) { clearInterval(timer); switchAppealView('view-5'); }
         }, 1000);
     }
+    function showVictory() {
+        const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+        container.innerHTML = `
+            <h1 style="color:var(--success-color)">验证通过</h1>
+            <p>您的最终用时：<strong style="color:#fff">${totalTime}s</strong></p>
+            <div style="margin-top:20px;">
+                <input type="text" id="leader-name" class="google-input" placeholder="输入代号名留青史" maxlength="10">
+                <button class="btn-primary" id="submit-score" style="width:100%; margin-top:15px;">提交成绩并查看排行</button>
+            </div>
+            <div id="board-area" style="margin-top:20px; font-size:14px;"></div>
+        `;
+
+        document.getElementById('submit-score').onclick = async () => {
+            const name = document.getElementById('leader-name').value || "无名英雄";
+            const btn = document.getElementById('submit-score');
+            btn.innerText = "上传中...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/leaderboard', {
+                    method: 'POST',
+                    body: JSON.stringify({ username: name, time: totalTime })
+                });
+                const data = await res.json();
+                renderBoard(data);
+            } catch (e) {
+                alert("提交失败，但你确实通过了地狱。");
+            }
+        };
+    }
+
+    function renderBoard(data) {
+        let html = `<table style="width:100%; border-collapse:collapse; margin-top:10px;">
+            <tr style="color:var(--text-sub); border-bottom:1px solid #444;">
+                <th align="left">排名</th><th align="left">代号</th><th align="right">耗时</th>
+            </tr>`;
+        data.forEach((item, index) => {
+            html += `<tr style="border-bottom:1px solid #333;">
+                <td>${index + 1}</td><td>${item.username}</td><td align="right">${item.time}s</td>
+            </tr>`;
+        });
+        html += `</table><button class="btn-primary" style="margin-top:20px; width:100%;" onclick="location.reload()">重新挑战</button>`;
+        document.getElementById('board-area').innerHTML = html;
+        document.getElementById('submit-score').style.display = 'none';
+        document.getElementById('leader-name').style.display = 'none';
+    }
 
     function returnToGame() {
         smoothSwitch('appeal-wrapper', 'captcha-view', 'flex');
@@ -399,6 +445,7 @@
     const levelFunctions = [
         // 关卡 1: 右键滑块
         function() {
+            startTime = Date.now();
             container.innerHTML = `<div class="captcha-title">滑动验证</div><div class="captcha-instruction">请拖动滑块完成验证。</div><div class="slider-track" id="slider-track"><div class="slider-bg" id="slider-bg"></div><div class="slider-btn" id="slider-btn">⋙</div></div>`;
             let btn = document.getElementById('slider-btn'), bg = document.getElementById('slider-bg'), track = document.getElementById('slider-track');
             let isDragging = false, startX = 0;
@@ -736,20 +783,49 @@
             activeIntervals.push(iv);
             document.getElementById('click-100').onclick = passLevel;
         },
-        // 关卡 20: 终极盲盒
+        // 关卡 20: 终极盲盒 + 排行榜入口
         function() {
-            container.innerHTML = `<div class="captcha-title">最后一关</div><div class="captcha-instruction">请点击绿色的“通过”按钮。仔细看好再点。</div><div style="display:flex; justify-content:center; gap:20px; margin-top:40px;"><button class="btn-primary" id="btn-pass" style="background:var(--success-color); color:#000;">通过</button><button class="btn-primary" id="btn-fail" style="background:var(--error-color); color:#fff;">封号</button></div>`;
-            let pBtn = document.getElementById('btn-pass'), fBtn = document.getElementById('btn-fail');
+            container.innerHTML = `
+                <div class="captcha-title">最终校验：逻辑坍缩</div>
+                <div class="captcha-instruction">
+                    请点击绿色的<strong style="color:var(--success-color)">“通过”</strong>按钮。
+                    <br><small style="color:var(--text-sub)">注意：观察力也是人类的特质。</small>
+                </div>
+                <div style="display:flex; justify-content:center; gap:20px; margin-top:40px;">
+                    <button class="btn-primary" id="btn-pass" style="background:var(--success-color); color:#202124;">通过</button>
+                    <button class="btn-primary" id="btn-fail" style="background:var(--error-color); color:#fff;">封号</button>
+                </div>`;
+
+            let pBtn = document.getElementById('btn-pass');
+            let fBtn = document.getElementById('btn-fail');
+
+            // 交换陷阱逻辑
             pBtn.onmouseenter = () => {
-                // 交换文本和颜色，但不交换 ID
-                let tempT = pBtn.innerText; pBtn.innerText = fBtn.innerText; fBtn.innerText = tempT;
-                let tempC = pBtn.style.background; pBtn.style.background = fBtn.style.background; fBtn.style.background = tempC;
-                let tempColor = pBtn.style.color; pBtn.style.color = fBtn.style.color; fBtn.style.color = tempColor;
-                // 绑定点击逻辑（当前显示为“通过”的即为真）
-                pBtn.onclick = () => { if(pBtn.innerText === '通过') passLevel(); else triggerRisk(); };
-                fBtn.onclick = () => { if(fBtn.innerText === '通过') passLevel(); else triggerRisk(); };
+                // 瞬间交换文案、背景色和文字颜色，但 ID 不变
+                let tempText = pBtn.innerText;
+                pBtn.innerText = fBtn.innerText;
+                fBtn.innerText = tempText;
+
+                let tempBg = pBtn.style.background;
+                pBtn.style.background = fBtn.style.background;
+                fBtn.style.background = tempBg;
+
+                let tempCol = pBtn.style.color;
+                pBtn.style.color = fBtn.style.color;
+                fBtn.style.color = tempCol;
             };
-            pBtn.onclick = passLevel; fBtn.onclick = triggerRisk; // 初始状态
+
+            // 核心校验：只有当你点击的那个按钮，其当前的文字确实是“通过”时，才算赢
+            const checkLogic = (e) => {
+                if (e.target.innerText === "通过") {
+                    showVictory(); // 进入排行榜界面
+                } else {
+                    triggerRisk(true); // 点错了直接永久封禁，地狱到底
+                }
+            };
+
+            pBtn.onclick = checkLogic;
+            fBtn.onclick = checkLogic;
         }
     ];
 </script>
