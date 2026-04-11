@@ -1,2 +1,0 @@
-# reChaptcha-Challenge
-Game
