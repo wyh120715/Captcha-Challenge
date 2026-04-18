@@ -624,7 +624,7 @@
                     4: "2^2",
                     5: "\\sqrt{25}",
                     6: "3!",
-                    7: "\\sum_{i=1}^3 i",
+                    7: "1-6 \\times e^{i\\pi}",
                     8: "\\sqrt{64}",
                     9: "3^2",
                     10: "\\log_{2} 1024",
@@ -669,6 +669,7 @@
                         block.style.color = "white";
                         if (nextTarget > 16) {
                             clearInterval(shuffleInterval);
+                            _3dD_92kdD2334 = true;
                             passLevel();
                         } else {
                             progressText.innerText = `目标：${nextTarget}`;
