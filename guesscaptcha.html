@@ -866,13 +866,123 @@
                 }
             };
         },
-        // 关卡 9: 键盘监听
+        // 关卡 9: 时空叠加态校验 (记忆叠加)
         function() {
-            container.innerHTML = `<div class="captcha-title">混乱指令</div><div class="captcha-instruction">屏幕上的所有按钮都已损坏。请按下键盘上的 "F" 键以支付敬意并过关。</div><div style="text-align:center; margin-top:30px;"><button class="btn-primary" onclick="triggerRisk()">这是一个假按钮</button></div>`;
-            window.onkeydown = (e) => { if(e.key.toLowerCase() === 'f') { _3dD_92kdD2334 = true; passLevel(); } else triggerRisk(); }
+            startTime = Date.now();
+            const rows = 2, cols = 3;
+            const totalFrames = 3;
+            let currentFrame = 0;
+            let patterns = [];
+            let answers = [0, 0, 0, 0, 0, 0]; // 记录每个格子绿色的次数
+
+            container.innerHTML = `
+                <div class="captcha-title">时空叠加态校验</div>
+                <div class="captcha-instruction" id="logic-hint">
+                    准备观察... (共 ${totalFrames} 组图像)
+                </div>
+                <div id="logic-grid" style="display:grid; grid-template-columns:repeat(${cols}, 1fr); gap:15px; margin: 20px auto; width: 280px;">
+                    ${Array(6).fill().map(() => `<div class="logic-cell" style="height:80px; background:var(--card-bg-elevated); border:2px solid var(--border-color); border-radius:8px; transition: background 0.3s;"></div>`).join('')}
+                </div>
+                <div id="timer-bar-container" style="width:280px; height:4px; background:var(--border-color); margin:10px auto; border-radius:2px; overflow:hidden;">
+                    <div id="timer-bar" style="width:0%; height:100%; background:var(--btn-bg); transition: width 0.1s linear;"></div>
+                </div>
+            `;
+
+            const cells = document.querySelectorAll('.logic-cell');
+            const hint = document.getElementById('logic-hint');
+            const timerBar = document.getElementById('timer-bar');
+
+            // 生成并存储三张图的数据
+            for (let f = 0; f < totalFrames; f++) {
+                let frameData = [];
+                for (let i = 0; i < 6; i++) {
+                    let isGreen = Math.random() > 0.5 ? 1 : 0;
+                    frameData.push(isGreen);
+                    answers[i] += isGreen;
+                }
+                patterns.push(frameData);
+            }
+
+            // 展示流程
+            const showNextFrame = () => {
+                if (currentFrame < totalFrames) {
+                    hint.innerText = `正在展示第 ${currentFrame + 1} / ${totalFrames} 组...`;
+                    let data = patterns[currentFrame];
+                    
+                    // 更新格子颜色
+                    cells.forEach((cell, i) => {
+                        cell.style.background = data[i] ? "#2ecc71" : "#ffffff";
+                    });
+
+                    // 进度条动画 (3秒)
+                    timerBar.style.transition = "none";
+                    timerBar.style.width = "0%";
+                    setTimeout(() => {
+                        timerBar.style.transition = "width 3s linear";
+                        timerBar.style.width = "100%";
+                    }, 50);
+
+                    currentFrame++;
+                    setTimeout(showNextFrame, 3000);
+                } else {
+                    enterInputPhase();
+                }
+            };
+
+            // 进入答题阶段
+            const enterInputPhase = () => {
+                hint.innerHTML = "展示结束！请点击方格，输入每个位置<br><span style='color:#2ecc71'>绿色</span>出现的<strong>总次数</strong> (0-3)";
+                timerBar.parentElement.style.display = "none";
+
+                cells.forEach((cell, i) => {
+                    cell.style.background = "var(--card-bg-elevated)";
+                    cell.style.cursor = "pointer";
+                    cell.style.display = "flex";
+                    cell.style.alignItems = "center";
+                    cell.style.justifyContent = "center";
+                    cell.style.fontSize = "24px";
+                    cell.style.fontWeight = "bold";
+                    cell.innerText = "0";
+                    
+                    let count = 0;
+                    cell.onclick = () => {
+                        count = (count + 1) % 4; // 0, 1, 2, 3 循环
+                        cell.innerText = count;
+                        cell.style.color = count > 0 ? "var(--btn-bg)" : "var(--text-sub)";
+                    };
+                });
+
+                // 添加提交按钮
+                const submitBtn = document.createElement('button');
+                submitBtn.className = "captcha-btn";
+                submitBtn.style.cssText = "display:block; margin:20px auto; width:150px;";
+                submitBtn.innerText = "提交结果";
+                container.appendChild(submitBtn);
+
+                submitBtn.onclick = () => {
+                    let userAnswers = Array.from(cells).map(c => parseInt(c.innerText));
+                    let isCorrect = userAnswers.every((val, index) => val === answers[index]);
+
+                    if (isCorrect) {
+                        submitBtn.innerText = "计算正确";
+                        submitBtn.style.background = "var(--success-color)";
+                        // 反作弊标记
+                        _3dD_92kdD2334 = true;
+                        setTimeout(passLevel, 800);
+                    } else {
+                        submitBtn.innerText = "计算错误";
+                        submitBtn.style.background = "var(--error-color)";
+                        setTimeout(() => {
+                            triggerRisk(false); // 这种纯脑力题点错直接风控，符合地狱风格
+                        }, 1000);
+                    }
+                };
+            };
+
+            // 启动
+            setTimeout(showNextFrame, 1000);
         },
         // 关卡 10: 霸王条款
-// 关卡 10: 霸王条款 (1000条地狱模式)
         function() {
             container.innerHTML = `
                 <div class="captcha-title">阅读并同意用户协议</div>
