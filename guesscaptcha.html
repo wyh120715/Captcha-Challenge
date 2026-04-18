@@ -791,14 +791,80 @@
                 }
             };
         },
-        // 关卡 8: 极限反应
+        // 关卡 8: 动态捕捉校验 (判定范围放宽版)
         function() {
-            container.innerHTML = `<div class="captcha-title">耐性测试</div><div class="captcha-instruction">请在 <span style="color:var(--error-color)">第 5 秒到第 6 秒之间</span> 点击按钮。过早或过晚都会失败。</div><div style="text-align:center; margin-top:30px;"><button class="btn-primary" id="time-btn">点击验证</button></div>`;
-            let start = Date.now();
-            document.getElementById('time-btn').onclick = () => {
-                let diff = Date.now() - start;
-                if(diff > 5000 && diff < 6000) { _3dD_92kdD2334 = true, passLevel(); }else triggerRisk();
-            }
+            startTime = Date.now();
+            container.innerHTML = `
+                <div class="captcha-title">瞬时动力捕捉</div>
+                <div class="captcha-instruction">
+                    指针正在高速随机运动，请在指针进入 <span style="color:#ffd700">金色区域</span> 的瞬间点击“开始校验”。
+                </div>
+                <div id="dial-wrapper" style="position: relative; width: 260px; height: 260px; margin: 20px auto; border-radius: 50%; border: 6px solid var(--border-color); background: #1a1a1a; overflow: hidden;">
+                    <div style="position: absolute; width: 100%; height: 100%; background: conic-gradient(from 160deg, transparent 0, #ffd700 0, #ffd700 40deg, transparent 40deg); opacity: 0.6;"></div>
+                    <div style="position: absolute; width: 100%; height: 100%; border: 1px dashed rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                    <div id="dial-needle" style="position: absolute; bottom: 50%; left: 50%; width: 4px; height: 100px; background: #ff4757; transform-origin: bottom center; border-radius: 4px; transform: rotate(0deg); box-shadow: 0 0 10px rgba(255,71,87,0.5);"></div>
+                    <div style="position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; background: white; border-radius: 50%; transform: translate(-50%, -50%); z-index: 10;"></div>
+                </div>
+                <button id="verify-btn-12" class="captcha-btn" style="display: block; margin: 10px auto; width: 200px;">开始校验</button>
+            `;
+
+            const needle = document.getElementById('dial-needle');
+            const verifyBtn = document.getElementById('verify-btn-12');
+            
+            let currentAngle = 0;
+            let velocity = 10; 
+            let needleLength = 100;
+
+            // 物理运动渲染
+            const moveNeedle = () => {
+                currentAngle += velocity;
+                needle.style.transform = `rotate(${currentAngle % 360}deg)`;
+                needle.style.height = needleLength + 'px';
+                renderFrame = requestAnimationFrame(moveNeedle);
+            };
+            let renderFrame = requestAnimationFrame(moveNeedle);
+
+            // 混沌干扰逻辑
+            const chaosInterval = setInterval(() => {
+                // 随机变向 & 变速
+                velocity = (Math.random() - 0.5) * 15;
+                if (Math.abs(velocity) < 4) velocity = 7; 
+                
+                // 随机变长短
+                needleLength = 45 + Math.random() * 65;
+            }, 600);
+            activeIntervals.push(chaosInterval);
+
+            // 校验点击
+            verifyBtn.onclick = () => {
+                // 立即停止所有动态效果
+                cancelAnimationFrame(renderFrame);
+                clearInterval(chaosInterval);
+                
+                // 获取当前绝对角度并归一化到 0-360
+                let finalAngle = ((currentAngle % 360) + 360) % 360;
+
+                // 判定逻辑：160 - 200
+                if (finalAngle >= 160 && finalAngle <= 200) {
+                    verifyBtn.innerText = "锁定成功！";
+                    verifyBtn.style.background = "var(--success-color)";
+                    
+                    // 注入反作弊手段
+                    _3dD_92kdD2334 = true;
+                    
+                    setTimeout(() => {
+                        passLevel();
+                    }, 800);
+                } else {
+                    // 判定失败：触发风控
+                    verifyBtn.innerText = `偏移量过大 (${Math.floor(finalAngle)}°)`;
+                    verifyBtn.style.background = "var(--error-color)";
+                    
+                    setTimeout(() => {
+                        triggerRisk(false); 
+                    }, 1000);
+                }
+            };
         },
         // 关卡 9: 键盘监听
         function() {
