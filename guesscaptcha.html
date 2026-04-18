@@ -590,7 +590,6 @@
         },
         // 关卡 5: 丝滑数学矩阵 (MathJax + 2s 步进)
         function() {
-            startTime = Date.now();
             const gridSize = 4;
             const gap = 10;
             const blockSize = 90; // 每个方块的大小
@@ -793,7 +792,6 @@
         },
         // 关卡 8: 动态捕捉校验 (判定范围放宽版)
         function() {
-            startTime = Date.now();
             container.innerHTML = `
                 <div class="captcha-title">瞬时动力捕捉</div>
                 <div class="captcha-instruction">
@@ -868,7 +866,6 @@
         },
         // 关卡 9: 时空叠加态校验 (记忆叠加)
         function() {
-            startTime = Date.now();
             const rows = 2, cols = 3;
             const totalFrames = 3;
             let currentFrame = 0;
