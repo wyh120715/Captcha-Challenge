@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏政策与服务条款 - 帮助中心</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --google-blue: #1a73e8;
+            --text-dark: #202124;
+            --text-light: #5f6368;
+            --border-color: #dadce0;
+            --bg-gray: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Open Sans', Arial, sans-serif;
+            background-color: #fff;
+            color: var(--text-dark);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            /* 禁止复制 */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 顶部导航栏 */
+        header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 22px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+        }
+
+        .logo strong {
+            color: var(--text-dark);
+            margin-right: 5px;
+            font-weight: 600;
+        }
+
+        /* 主体容器 */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* 搜索框模拟 */
+        .search-bar {
+            background: var(--bg-gray);
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 40px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+
+        /* 文章样式 */
+        h1 {
+            font-size: 28px;
+            font-weight: 400;
+            margin-bottom: 30px;
+        }
+
+        section {
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 30px;
+            color: var(--text-dark);
+        }
+
+        ul {
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+
+        li {
+            margin-bottom: 12px;
+            color: var(--text-light);
+        }
+
+        li strong {
+            color: var(--text-dark);
+        }
+
+        /* 警告框 */
+        .warning-box {
+            background-color: #fce8e6;
+            border-left: 4px solid #d93025;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box p {
+            margin: 0;
+            color: #b31412;
+            font-weight: 600;
+        }
+
+        /* 底部 */
+        footer {
+            border-top: 1px solid var(--border-color);
+            margin-top: 60px;
+            padding: 24px;
+            text-align: center;
+            color: var(--text-light);
+            font-size: 13px;
+        }
+
+        .btn-start {
+            display: inline-block;
+            background-color: var(--google-blue);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+
+        .btn-start:hover {
+            background-color: #185abc;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+        }
+
+    </style>
+</head>
+<body oncontextmenu="return false;"> <header>
+        <div class="logo"><strong>验证码地狱</strong> 帮助中心</div>
+    </header>
+
+    <div class="container">
+        <article>
+            <h1>地狱验证码游戏：所有政策与规范</h1>
+
+            <section>
+                <h2>关于游戏</h2>
+                <ul>
+                    <li>这是一个关于一些<strong>特难</strong>的验证码游戏，旨在测试人类的极限。</li>
+                    <li>您可以点击下方的“开始游戏”按钮进入挑战。</li>
+                    <li>进入游戏界面后，输入一个<strong>任意 Gmail 邮箱</strong>（该邮箱不需要真实存在，仅作为存档标识）即可开始。</li>
+                    <li>成功通关后，您可以将成绩加入排行榜。排行榜每天刷新（<strong>UTC +8</strong>）。</li>
+                </ul>
+                <div class="warning-box">
+                    <p>⚠️ 注意事项：挑战过程中可能导致轻微血压升高，若发生意外情况，本游戏概不负责。</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>您可以做的</h2>
+                <ul>
+                    <li>认真、诚实地完成游戏，不使用任何形式的作弊手段。</li>
+                    <li>前往 GitHub 提交具有建设意义的 <strong>Issue</strong>。</li>
+                    <li>申请加入我们的开发者团队。</li>
+                    <li>在 GitHub 上创建 <strong>Pull Request</strong>，为游戏优化贡献一份力量。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>你不应该做的（禁止行为）</h2>
+                <ul>
+                    <li>通过<strong>某些</strong>手段强行进入开发者控制台。</li>
+                    <li>使用不正当的辅助脚本或第三方工具通过关卡。</li>
+                    <li>在 GitHub 上提交恶意、无意义或重复的 Issue。</li>
+                    <li>对游戏服务器进行 DDoS 攻击或其他网络破坏。</li>
+                    <li><strong>复制粘贴本游戏内的任何内容。</strong>（本页面已启用防复制逻辑）</li>
+                    <li>使用任何影响游戏公平性的手段（如物理辅助、多开等）。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>违规处罚</h2>
+                <p>若系统检测到违反上述政策的行为：</p>
+                <ul>
+                    <li style="color: #d93025; font-weight: bold;">您本轮成绩将立即作废，并可能面临设备/IP 的永久封禁。</li>
+                </ul>
+            </section>
+
+            <a href="#" class="btn-start" onclick="startGame()">开始游戏</a>
+        </article>
+    </div>
+
+    <script>
+        function startGame() {
+            location.href = "/guesscaptcha"; 
+        }
+    </script>
+</body>
+</html>

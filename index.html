@@ -68,6 +68,8 @@
         <p>证明你不仅是一个人类，还是一个极具耐心的人类。</p>
         
         <button class="start-btn" onclick="startGame()">开始游戏！</button>
+
+        <button class="start-btn" onclick="toSupport()">帮助中心</button>
         
         <div class="warning">警告：过程可能导致轻微的血压升高</div>
     </div>
@@ -76,6 +78,9 @@
         function startGame() {
             // 跳转到你的挑战页面
             location.href = '/guesscaptcha';
+        }
+        function toSupport() {
+            location.href = '/support';
         }
     </script>
 </body>
