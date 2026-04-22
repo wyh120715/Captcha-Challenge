@@ -488,6 +488,90 @@
        🎮 固定 20 关逻辑库
        ========================================= */
     const levelFunctions = [
+        // 关卡 14: 深度防御与终端授权 (Cloudflare 模拟 + 虚拟终端)
+        function() {
+            startTime = Date.now();
+            
+            // 初始状态：Cloudflare 转圈
+            container.innerHTML = `
+                <div id="cf-spinner-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:20px;">
+                    <div class="spinner" style="width:50px; height:50px; border:5px solid #f3f3f3; border-top:5px solid var(--btn-bg); border-radius:50%; animation: spin 1s linear infinite;"></div>
+                    <div style="font-size:16px; color:var(--text-main);">正在验证你是否是真人...</div>
+                </div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+            `;
+
+            // 1. 3秒后弹出勾选框
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div id="cf-check-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:20px;">
+                        <div style="font-size:16px; margin-bottom:10px;">Cloudflare 校验</div>
+                        <label style="border:1px solid var(--border-color); padding:15px; border-radius:5px; cursor:pointer; background:var(--card-bg-elevated); display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="human-checkbox" style="width:20px; height:20px;"> 勾选提示框以确认你是真人
+                        </label>
+                    </div>
+                `;
+
+                document.getElementById('human-checkbox').onclick = () => {
+                    // 2. 勾选后 1.5s 弹出风险提示
+                    setTimeout(() => {
+                        showRiskAlert();
+                    }, 1500);
+                };
+            }, 3000);
+
+            // 弹出风险界面
+            const showRiskAlert = () => {
+                container.innerHTML = `
+                    <div style="background:white; color:black; padding:30px; border-radius:8px; border:2px solid #d93025; box-shadow:0 10px 20px rgba(0,0,0,0.3); text-align:center;">
+                        <h2 style="color:#d93025;">⚠️ 检测到风险环境</h2>
+                        <p>当前请求IP存在异常，需要进行 <strong>终端授权验证</strong> 以证明合法性。</p>
+                        <button id="enter-terminal-btn" style="padding:10px 20px; background:#d93025; color:white; border:none; border-radius:4px; cursor:pointer;">启动虚拟终端</button>
+                    </div>
+                `;
+                document.getElementById('enter-terminal-btn').onclick = showTerminal;
+            };
+
+            // 3. 启动虚拟终端
+            const showTerminal = () => {
+                container.innerHTML = `
+                    <div id="terminal-wrapper" style="background:#000; color:#0f0; font-family:'Courier New', monospace; padding:15px; height:300px; overflow-y:auto; border-radius:5px; border:1px solid #333;">
+                        <div id="terminal-output">
+                            > SYSTEM_AUTH_REQUIRED<br>
+                            > INITIALIZING_VIRTUAL_ENV...<br>
+                            > [OK] 安全协议已加载<br>
+                            > 请输入授权码以继续：<br>
+                        </div>
+                        <div style="display:flex;">
+                            <span>></span>
+                            <input type="text" id="term-input" style="background:transparent; border:none; color:#0f0; outline:none; flex-grow:1; margin-left:5px;">
+                        </div>
+                    </div>
+                `;
+                const input = document.getElementById('term-input');
+                input.focus();
+                
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        const cmd = input.value.trim();
+                        const output = document.getElementById('terminal-output');
+                        
+                        output.innerHTML += `> ${cmd}<br>`;
+                        
+                        if (cmd === "verify --human-auth-2026") {
+                            output.innerHTML += `<span style="color:#fff;">[SUCCESS] 授权通过。正在跳转...</span>`;
+                            // 反作弊变量植入
+                            _3dD_92kdD2334 = true;
+                            setTimeout(passLevel, 1000);
+                        } else {
+                            output.innerHTML += `<span style="color:#f00;">[ERROR] 授权码无效，请尝试：verify --human-auth-2026</span><br>`;
+                        }
+                        input.value = "";
+                        document.getElementById('terminal-wrapper').scrollTop = document.getElementById('terminal-wrapper').scrollHeight;
+                    }
+                };
+            };
+        },
         // 关卡 1: 右键滑块
         function() {
             startTime = Date.now();
