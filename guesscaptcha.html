@@ -488,71 +488,99 @@
        🎮 固定 20 关逻辑库
        ========================================= */
     const levelFunctions = [
-        // 关卡 14: 虚拟终端前的预检 (伪装 Cloudflare)
+// 关卡 7: 环境深度校验 (Cloudflare 伪装 + 指令陷阱)
         function() {
             startTime = Date.now();
+            
+            // 阶段 1: 模仿 Cloudflare 转圈
             container.innerHTML = `
-                <div id="cloudflare-mock" style="text-align:center; padding: 40px;">
-                    <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #f48120; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-                    <p id="verify-text" style="font-size: 16px; color: #555;">正在验证你是否是真人……</p>
+                <div id="phase-1" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; gap:20px;">
+                    <div style="width:40px; height:40px; border:4px solid #f3f3f3; border-top:4px solid #f6821f; border-radius:50%; animation: spin 1s linear infinite;"></div>
+                    <div style="font-size:16px; color:var(--text-main); font-family: sans-serif;">正在验证您是否是真人...</div>
                 </div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
             `;
 
-            // 注入转圈 CSS
-            const style = document.createElement('style');
-            style.innerHTML = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
-            document.head.appendChild(style);
-
-            // 1. 伪装期：3秒后弹出勾选框
+            // 3秒后进入阶段 2: 勾选框
             setTimeout(() => {
-                const mock = document.getElementById('cloudflare-mock');
-                mock.innerHTML = `
-                    <div style="border: 1px solid #ccc; padding: 15px; display: inline-block; cursor: pointer; background: white;" id="checkbox-wrapper">
-                        <input type="checkbox" id="human-check" style="margin-right: 10px;">
-                        <span style="font-size: 14px;">勾选提示框以确认你是真人</span>
+                container.innerHTML = `
+                    <div id="phase-2" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; animation: fadeIn 0.5s;">
+                        <div style="border:1px solid #ddd; padding:20px; border-radius:4px; background:#fafafa; display:flex; align-items:center; gap:15px; cursor:pointer; width:280px;" id="cf-box">
+                            <input type="checkbox" id="human-checkbox" style="width:24px; height:24px; cursor:pointer;">
+                            <span style="color:#333; font-family:sans-serif; font-size:14px;">确认我是真人</span>
+                            <img src="https://www.cloudflare.com/img/logo-cloudflare-dark.svg" style="height:18px; margin-left:auto; opacity:0.8;">
+                        </div>
                     </div>
                 `;
 
-                document.getElementById('human-check').onclick = () => {
-                    // 2. 诱导期：点击后 1.5s 弹出风险提示
-                    const wrapper = document.getElementById('checkbox-wrapper');
-                    wrapper.innerHTML = "正在验证...";
-                    
-                    setTimeout(() => {
-                        // 3. 触发期：弹出风险提示并跳转终端
-                        showRiskAndTerminal();
-                    }, 1500);
+                document.getElementById('human-checkbox').onchange = function() {
+                    if(this.checked) {
+                        // 阶段 2 -> 阶段 3: 1.5秒后弹出风险环境提示
+                        setTimeout(() => {
+                            showRiskWarning();
+                        }, 1500);
+                    }
                 };
             }, 3000);
 
-            // 虚拟终端展示
-            function showRiskAndTerminal() {
+            // 阶段 3: 风险警告
+            const showRiskWarning = () => {
                 container.innerHTML = `
-                    <div style="color: #ff4757; font-weight: bold; margin-bottom: 10px;">检测到风险环境，需要进行底层校验。</div>
-                    <div id="terminal" style="background: black; color: #00ff00; padding: 15px; font-family: monospace; height: 200px; overflow-y: auto; text-align: left; border-radius: 5px; border: 1px solid #333;">
-                        <div>>> INITIALIZING SECURITY PROTOCOL...</div>
-                        <div>>> CHECKING ENVIRONMENT... [FAIL]</div>
-                        <div>>> VIRTUAL TERMINAL ACTIVE.</div>
-                        <div>>> PLEASE INPUT: "AUTH_VERIFY_2026"</div>
-                        <input type="text" id="term-input" style="background: transparent; border: none; color: #00ff00; width: 100%; outline: none;" autofocus>
+                    <div style="padding:20px; border:2px solid #d93025; background:#fff; border-radius:8px; text-align:center; animation: shake 0.4s;">
+                        <h3 style="color:#d93025; margin-top:0;">⚠️ 检测到风险环境</h3>
+                        <p style="font-size:14px; color:#333;">系统检测到内核级驱动异常。为确保安全，需要通过终端手动执行授权指令。</p>
+                        <button id="start-term" class="captcha-btn" style="background:#d93025; width:100%;">启动安全终端</button>
                     </div>
                 `;
+                document.getElementById('start-term').onclick = showTerminal;
+            };
 
-                const input = document.getElementById('term-input');
+            // 阶段 4: 虚拟终端 (保留原有关卡的解谜逻辑)
+            const showTerminal = () => {
+                container.innerHTML = `
+                    <div class="captcha-instruction" style="color:var(--error-color); font-weight:bold; margin-bottom:10px;">
+                        请输入系统提示的授权命令：
+                    </div>
+                    <div style="background:#000; color:#0f0; padding:15px; font-family:monospace; border-radius:4px; border:1px solid #333;">
+                        <div style="color:#888; font-size:12px; margin-bottom:5px;">[SECURE_SHELL v1.0.4]</div>
+                        <div style="margin-bottom:10px;">
+                            SYSTEM_REQ: <span id="l7-target-hint" contenteditable="true" 
+                                style="color:#fff; background:#333; padding:0 5px; cursor:text; text-decoration:underline; font-weight:bold;">shutdown -p</span>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            <span style="margin-right:8px; color:#0f0;">#</span>
+                            <input type="text" id="l7-in" style="background:transparent; border:none; color:#0f0; outline:none; flex-grow:1; font-family:inherit; font-size:14px;" autocomplete="off">
+                        </div>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-sub); margin-top:8px;">提示：如无法执行，请尝试编辑系统请求指令。</div>
+                `;
+
+                const input = document.getElementById('l7-in');
+                const hintSpan = document.getElementById('l7-target-hint');
+                input.focus();
+
                 input.onkeydown = (e) => {
                     if (e.key === 'Enter') {
-                        if (input.value.trim() === 'AUTH_VERIFY_2026') {
-                            // 校验通过
-                            _3dD_92kdD2334 = true; 
+                        const userInput = input.value.trim();
+                        const currentHint = hintSpan.innerText.trim();
+
+                        // 核心逻辑判断
+                        // 1. 陷阱：输入包含 "shutdown" -> 永久风控
+                        if (userInput.toLowerCase().includes("shutdown")) {
+                            triggerRisk(true);
+                        } 
+                        // 2. 通关：修改了提示，且输入内容等于修改后的提示
+                        else if (currentHint !== "shutdown -p" && userInput === currentHint) {
+                            _3dD_92kdD2334 = true; // 反作弊标记
                             passLevel();
-                        } else {
-                            // 校验失败，直接触发你的风控逻辑
-                            document.getElementById('terminal').innerHTML += "<div style='color:red'>> ACCESS DENIED.</div>";
-                            setTimeout(() => triggerRisk(true), 1000);
+                        } 
+                        // 3. 错误：没改提示直接输，或输入不匹配
+                        else {
+                            triggerRisk(false);
                         }
                     }
                 };
-            }
+            };
         },
         // 关卡 1: 右键滑块
         function() {
