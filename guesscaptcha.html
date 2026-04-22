@@ -488,100 +488,6 @@
        🎮 固定 20 关逻辑库
        ========================================= */
     const levelFunctions = [
-// 关卡 7: 环境深度校验 (Cloudflare 伪装 + 指令陷阱)
-        function() {
-            startTime = Date.now();
-            
-            // 阶段 1: 模仿 Cloudflare 转圈
-            container.innerHTML = `
-                <div id="phase-1" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; gap:20px;">
-                    <div style="width:40px; height:40px; border:4px solid #f3f3f3; border-top:4px solid #f6821f; border-radius:50%; animation: spin 1s linear infinite;"></div>
-                    <div style="font-size:16px; color:var(--text-main); font-family: sans-serif;">正在验证您是否是真人...</div>
-                </div>
-                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-            `;
-
-            // 3秒后进入阶段 2: 勾选框
-            setTimeout(() => {
-                container.innerHTML = `
-                    <div id="phase-2" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; animation: fadeIn 0.5s;">
-                        <div style="border:1px solid #ddd; padding:20px; border-radius:4px; background:#fafafa; display:flex; align-items:center; gap:15px; cursor:pointer; width:280px;" id="cf-box">
-                            <input type="checkbox" id="human-checkbox" style="width:24px; height:24px; cursor:pointer;">
-                            <span style="color:#333; font-family:sans-serif; font-size:14px;">确认我是真人</span>
-                            <img src="https://www.cloudflare.com/img/logo-cloudflare-dark.svg" style="height:18px; margin-left:auto; opacity:0.8;">
-                        </div>
-                    </div>
-                `;
-
-                document.getElementById('human-checkbox').onchange = function() {
-                    if(this.checked) {
-                        // 阶段 2 -> 阶段 3: 1.5秒后弹出风险环境提示
-                        setTimeout(() => {
-                            showRiskWarning();
-                        }, 1500);
-                    }
-                };
-            }, 3000);
-
-            // 阶段 3: 风险警告
-            const showRiskWarning = () => {
-                container.innerHTML = `
-                    <div style="padding:20px; border:2px solid #d93025; background:#fff; border-radius:8px; text-align:center; animation: shake 0.4s;">
-                        <h3 style="color:#d93025; margin-top:0;">⚠️ 检测到风险环境</h3>
-                        <p style="font-size:14px; color:#333;">系统检测到内核级驱动异常。为确保安全，需要通过终端手动执行授权指令。</p>
-                        <button id="start-term" class="captcha-btn" style="background:#d93025; width:100%;">启动安全终端</button>
-                    </div>
-                `;
-                document.getElementById('start-term').onclick = showTerminal;
-            };
-
-            // 阶段 4: 虚拟终端 (保留原有关卡的解谜逻辑)
-            const showTerminal = () => {
-                container.innerHTML = `
-                    <div class="captcha-instruction" style="color:var(--error-color); font-weight:bold; margin-bottom:10px;">
-                        请输入系统提示的授权命令：
-                    </div>
-                    <div style="background:#000; color:#0f0; padding:15px; font-family:monospace; border-radius:4px; border:1px solid #333;">
-                        <div style="color:#888; font-size:12px; margin-bottom:5px;">[SECURE_SHELL v1.0.4]</div>
-                        <div style="margin-bottom:10px;">
-                            SYSTEM_REQ: <span id="l7-target-hint" contenteditable="true" 
-                                style="color:#fff; background:#333; padding:0 5px; cursor:text; text-decoration:underline; font-weight:bold;">shutdown -p</span>
-                        </div>
-                        <div style="display:flex; align-items:center;">
-                            <span style="margin-right:8px; color:#0f0;">#</span>
-                            <input type="text" id="l7-in" style="background:transparent; border:none; color:#0f0; outline:none; flex-grow:1; font-family:inherit; font-size:14px;" autocomplete="off">
-                        </div>
-                    </div>
-                    <div style="font-size:11px; color:var(--text-sub); margin-top:8px;">提示：如无法执行，请尝试编辑系统请求指令。</div>
-                `;
-
-                const input = document.getElementById('l7-in');
-                const hintSpan = document.getElementById('l7-target-hint');
-                input.focus();
-
-                input.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
-                        const userInput = input.value.trim();
-                        const currentHint = hintSpan.innerText.trim();
-
-                        // 核心逻辑判断
-                        // 1. 陷阱：输入包含 "shutdown" -> 永久风控
-                        if (userInput.toLowerCase().includes("shutdown")) {
-                            triggerRisk(true);
-                        } 
-                        // 2. 通关：修改了提示，且输入内容等于修改后的提示
-                        else if (currentHint !== "shutdown -p" && userInput === currentHint) {
-                            _3dD_92kdD2334 = true; // 反作弊标记
-                            passLevel();
-                        } 
-                        // 3. 错误：没改提示直接输，或输入不匹配
-                        else {
-                            triggerRisk(false);
-                        }
-                    }
-                };
-            };
-        },
         // 关卡 1: 右键滑块
         function() {
             startTime = Date.now();
@@ -830,58 +736,98 @@
                 passLevel();
             };
         },
-        // 关卡 7: 恶意指令陷阱 (指令编辑版)
+        // 关卡 7: 环境深度校验 (Cloudflare 伪装 + 指令陷阱)
         function() {
+            startTime = Date.now();
+            
+            // 阶段 1: 模仿 Cloudflare 转圈
             container.innerHTML = `
-                <div class="captcha-title">环境兼容性校验</div>
-                <div class="captcha-instruction">请点击下方按钮启动扫描。</div>
-                
-                <div id="cf-wrapper" onclick="document.getElementById('cf-wrapper').style.display='none'; document.getElementById('l7-terminal-box').style.display='block'; document.getElementById('l7-in').focus();" 
-                    style="border:1px solid var(--border-color); padding:15px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; border-radius:4px; background:var(--card-bg-elevated); margin: 20px 0;">
-                    <div style="display:flex; align-items:center;">
-                        <div style="width:24px; height:24px; border:3px solid var(--btn-bg); border-top-color:transparent; border-radius:50%; margin-right:15px; animation: spin 1s linear infinite;"></div>
-                        <span>确认您是真人</span>
-                    </div>
-                    <img src="https://www.cloudflare.com/img/logo-cloudflare-dark.svg" style="height:20px; opacity:0.5;">
+                <div id="phase-1" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; gap:20px;">
+                    <div style="width:40px; height:40px; border:4px solid #f3f3f3; border-top:4px solid #f6821f; border-radius:50%; animation: spin 1s linear infinite;"></div>
+                    <div style="font-size:16px; color:var(--text-main); font-family: sans-serif;">正在验证您是否是真人...</div>
                 </div>
-
-                <div id="l7-terminal-box" style="display:none;">
-                    <div class="captcha-instruction" style="color:var(--error-color); font-weight:bold;">
-                        ⚠ 警告：检测到内核级阻塞。请输入以下命令以证明你是真人：
-                    </div>
-                    
-                    <div style="background:#000; color:#0f0; padding:15px; font-family:monospace; border-radius:4px; margin-bottom:10px;">
-                        [SYSTEM]: <span id="l7-target-hint" contenteditable="true" style="color:#fff; background:#222; padding:0 5px; cursor:text; text-decoration: underline;">shutdown -p</span>
-                        <div style="margin-top:10px; display:flex;">
-                            <span style="margin-right:10px;">$</span>
-                            <input type="text" id="l7-in" style="background:transparent; border:none; color:#0f0; outline:none; width:80%; font-family:inherit;" autocomplete="off">
-                        </div>
-                    </div>
-                </div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
             `;
 
-            const input = document.getElementById('l7-in');
-            const hintSpan = document.getElementById('l7-target-hint');
+            // 3秒后进入阶段 2: 勾选框
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div id="phase-2" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; animation: fadeIn 0.5s;">
+                        <div style="border:1px solid #ddd; padding:20px; border-radius:4px; background:#fafafa; display:flex; align-items:center; gap:15px; cursor:pointer; width:280px;" id="cf-box">
+                            <input type="checkbox" id="human-checkbox" style="width:24px; height:24px; cursor:pointer;">
+                            <span style="color:#333; font-family:sans-serif; font-size:14px;">确认我是真人</span>
+                            <img src="https://www.cloudflare.com/img/logo-cloudflare-dark.svg" style="height:18px; margin-left:auto; opacity:0.8;">
+                        </div>
+                    </div>
+                `;
 
-            input.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    const userInput = input.value.trim();
-                    const currentHint = hintSpan.innerText.trim();
-
-                    // 1. 永久封禁：输入中带有 "shutdown" (不管是输入进去的还是默认指令)
-                    if (userInput.toLowerCase().includes("shutdown")) {
-                        triggerRisk(true);
-                    } 
-                    // 2. 通关：玩家把提示改了，并且输入的指令和改完后的提示一致
-                    else if (currentHint !== "shutdown -p" && userInput === currentHint) {
-                        _3dD_92kdD2334 = true;
-                        passLevel();
-                    } 
-                    // 3. 常规风控：没改提示就输入，或者输入不匹配
-                    else {
-                        triggerRisk(false);
+                document.getElementById('human-checkbox').onchange = function() {
+                    if(this.checked) {
+                        // 阶段 2 -> 阶段 3: 1.5秒后弹出风险环境提示
+                        setTimeout(() => {
+                            showRiskWarning();
+                        }, 1500);
                     }
-                }
+                };
+            }, 3000);
+
+            // 阶段 3: 风险警告
+            const showRiskWarning = () => {
+                container.innerHTML = `
+                    <div style="padding:20px; border:2px solid #d93025; background:#fff; border-radius:8px; text-align:center; animation: shake 0.4s;">
+                        <h3 style="color:#d93025; margin-top:0;">⚠️ 检测到风险环境</h3>
+                        <p style="font-size:14px; color:#333;">系统检测到内核级驱动异常。为确保安全，需要通过终端手动执行授权指令。</p>
+                        <button id="start-term" class="captcha-btn" style="background:#d93025; width:100%;">启动安全终端</button>
+                    </div>
+                `;
+                document.getElementById('start-term').onclick = showTerminal;
+            };
+
+            // 阶段 4: 虚拟终端 (保留原有关卡的解谜逻辑)
+            const showTerminal = () => {
+                container.innerHTML = `
+                    <div class="captcha-instruction" style="color:var(--error-color); font-weight:bold; margin-bottom:10px;">
+                        请输入系统提示的授权命令：
+                    </div>
+                    <div style="background:#000; color:#0f0; padding:15px; font-family:monospace; border-radius:4px; border:1px solid #333;">
+                        <div style="color:#888; font-size:12px; margin-bottom:5px;">[SECURE_SHELL v1.0.4]</div>
+                        <div style="margin-bottom:10px;">
+                            SYSTEM_REQ: <span id="l7-target-hint" contenteditable="true" 
+                                style="color:#fff; background:#333; padding:0 5px; cursor:text; text-decoration:underline; font-weight:bold;">shutdown -p</span>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            <span style="margin-right:8px; color:#0f0;">#</span>
+                            <input type="text" id="l7-in" style="background:transparent; border:none; color:#0f0; outline:none; flex-grow:1; font-family:inherit; font-size:14px;" autocomplete="off">
+                        </div>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-sub); margin-top:8px;">提示：如无法执行，请尝试编辑系统请求指令。</div>
+                `;
+
+                const input = document.getElementById('l7-in');
+                const hintSpan = document.getElementById('l7-target-hint');
+                input.focus();
+
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        const userInput = input.value.trim();
+                        const currentHint = hintSpan.innerText.trim();
+
+                        // 核心逻辑判断
+                        // 1. 陷阱：输入包含 "shutdown" -> 永久风控
+                        if (userInput.toLowerCase().includes("shutdown")) {
+                            triggerRisk(true);
+                        } 
+                        // 2. 通关：修改了提示，且输入内容等于修改后的提示
+                        else if (currentHint !== "shutdown -p" && userInput === currentHint) {
+                            _3dD_92kdD2334 = true; // 反作弊标记
+                            passLevel();
+                        } 
+                        // 3. 错误：没改提示直接输，或输入不匹配
+                        else {
+                            triggerRisk(false);
+                        }
+                    }
+                };
             };
         },
         // 关卡 8: 动态捕捉校验 (判定范围放宽版)
