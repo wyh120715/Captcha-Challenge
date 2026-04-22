@@ -738,8 +738,6 @@
         },
         // 关卡 7: 环境深度校验 (Cloudflare 伪装 + 指令陷阱)
         function() {
-            startTime = Date.now();
-            
             // 阶段 1: 模仿 Cloudflare 转圈
             container.innerHTML = `
                 <div id="phase-1" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; gap:20px;">
