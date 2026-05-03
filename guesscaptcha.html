@@ -269,6 +269,8 @@
 </div>
 
 <script>
+// 🛡️ 核心防线：使用立即执行函数 (IIFE) 隐藏所有全局变量，防止控制台直接调用
+(function() {
     let startTime = null;
     let userEmailAddress = "";
     let _3dD_92kdD2334 = false;
@@ -279,38 +281,30 @@
     // 清理管理器（防止关卡间的定时器和事件互相污染）
     let activeIntervals = [];
     let activeTimeouts = [];
+    let isFatalBan = false; // 全局致命封禁标记
 
     /* =========================================
        🛡️ 终极防线：按键监控系统
        ========================================= */
     window.addEventListener('keydown', function (e) {
-        
-        // 1. 监控 F12 (keyCode 123) -> 永久封禁，不可申诉
         if ((e.key === 'F12' || e.keyCode === 123)) {
             e.preventDefault();
             console.error("检测到非法调试尝试。系统已物理锁定。");
-            triggerRisk(true); // 传入 true，代表无法申诉
+            triggerRisk(true); 
         }
-
-        // 2. 监控 Ctrl + C 和 Ctrl + V -> 风控，可以申诉
-        // metaKey 是为了兼容 Mac 用户的 Command 键
         if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.keyCode === 67 || e.keyCode === 86)) {
             e.preventDefault();
-            // 只有在验证进行中才触发（防止登录界面误伤）
             if (document.getElementById('captcha-view').style.display === 'flex') {
                 alert("检测到外部数据干预尝试（复制/粘贴）。已进入安全隔离区。");
-                triggerRisk(false); // 传入 false，允许申诉
+                triggerRisk(false); 
             }
         }
-        
-        // 3. 额外防御：Ctrl + Shift + I (也是打开控制台) -> 永久封禁
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.keyCode === 73)) {
             e.preventDefault();
             triggerRisk(true);
         }
-    }, true); // 使用捕获模式，确保第一时间拦截
+    }, true); 
 
-    // 禁用右键（防止通过右键->检查打开 F12）
     document.oncontextmenu = function(e) {
         e.preventDefault();
         return false;
@@ -326,18 +320,21 @@
         showEl.classList.add('slide-in');
     }
 
-    function verifyLogin() {
+    // 将 verifyLogin 挂载到 window 上，因为 HTML 里的 onclick 需要调用它
+    window.verifyLogin = function() {
         const val = document.getElementById('email-input').value.trim();
         if (/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(val)) {
             userEmailAddress = val;
             document.querySelectorAll('.user-email-display').forEach(el => el.innerText = userEmailAddress);
             smoothSwitch('login-view', 'captcha-view', 'flex');
+            // 修复：全局只在这里记录一次 startTime
+            if (!startTime) startTime = Date.now();
             initCaptcha();
         } else {
             document.getElementById('email-error').style.display = "flex";
             document.getElementById('email-input').style.border = "2px solid var(--error-color)";
         }
-    }
+    };
 
     function clearLevelState() {
         activeIntervals.forEach(clearInterval);
@@ -361,11 +358,11 @@
         container.classList.remove('slide-in');
         void container.offsetWidth; 
         container.classList.add('slide-in');
-        // 按照顺序加载关卡
         levelFunctions[currentLevel - 1]();
     }
 
-    function triggerRisk(isFatal = false) {
+    // 将这些 HTML 直接调用的函数挂载到 window
+    window.triggerRisk = function(isFatal = false) {
         clearLevelState();
         isFatalBan = isFatal; 
         
@@ -383,56 +380,46 @@
         }
 
         smoothSwitch('captcha-view', 'appeal-wrapper', 'flex');
-        switchAppealView('view-1');
-    }
+        window.switchAppealView('view-1');
+    };
 
     function passLevel() { 
         currentLevel++;
-        if(_3dD_92kdD2334 == false) triggerRisk(true);
+        if(_3dD_92kdD2334 == false) window.triggerRisk(true);
         _3dD_92kdD2334 = false; 
         initCaptcha(); 
     }
-    let isFatalBan = false; // 全局致命封禁标记
 
-    function handleStartAppeal() {
-        if (isPermanentBan) {
-            // 如果是永久封禁，点击按钮会报错并重载页面（或者你可以让按钮变灰不可点）
-            alert("禁止访问：您的账号因安全等级 0 级事故已锁死，无法提交申诉。");
-            location.reload(); 
-        } else {
-            switchAppealView('view-2');
-        }
-    }
-
-    // 找到 handleStartAppeal 或修改“发起申诉”按钮的点击事件
-    function handleStartAppeal() {
+    window.handleStartAppeal = function() {
         if (isFatalBan) {
             alert("错误代码：0xDEADC0DE。由于账号已被标记为“恶意破坏者”，申诉通道已关闭。");
-            location.reload(); // 或者直接 window.close()
+            location.reload(); 
         } else {
-            switchAppealView('view-2');
+            window.switchAppealView('view-2');
         }
-    }
+    };
 
-    function switchAppealView(viewId) {
+    window.switchAppealView = function(viewId) {
         document.querySelectorAll('.appeal-card').forEach(card => card.style.display = 'none');
         const showEl = document.getElementById(viewId);
         showEl.style.display = 'block';
         showEl.classList.remove('slide-in'); void showEl.offsetWidth; showEl.classList.add('slide-in');
-    }
+    };
 
-    function startAppealProcess() {
-        switchAppealView('view-4');
+    window.startAppealProcess = function() {
+        window.switchAppealView('view-4');
         let timeLeft = 25; 
         document.getElementById('countdown-text').innerText = timeLeft;
         let timer = setInterval(() => {
             timeLeft--;
             document.getElementById('countdown-text').innerText = timeLeft;
-            if (timeLeft <= 0) { clearInterval(timer); switchAppealView('view-5'); }
+            if (timeLeft <= 0) { clearInterval(timer); window.switchAppealView('view-5'); }
         }, 1000);
-    }
+    };
+
     function showVictory() {
-        if(_3dD_92kdD2334 == false) reiggerRisk(false);
+        // 修复拼写错误：reiggerRisk -> triggerRisk
+        if(_3dD_92kdD2334 == false) window.triggerRisk(false);
         const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
         container.innerHTML = `
             <h1 style="color:var(--success-color)">验证通过</h1>
@@ -479,10 +466,10 @@
         document.getElementById('leader-name').style.display = 'none';
     }
 
-    function returnToGame() {
+    window.returnToGame = function() {
         smoothSwitch('appeal-wrapper', 'captcha-view', 'flex');
         initCaptcha(); 
-    }
+    };
 
     /* =========================================
        🎮 固定 20 关逻辑库
@@ -490,13 +477,13 @@
     const levelFunctions = [
         // 关卡 1: 右键滑块
         function() {
-            startTime = Date.now();
+            // 已移除局部的 startTime = Date.now();
             container.innerHTML = `<div class="captcha-title">滑动验证</div><div class="captcha-instruction">请拖动滑块完成验证。</div><div class="slider-track" id="slider-track"><div class="slider-bg" id="slider-bg"></div><div class="slider-btn" id="slider-btn">⋙</div></div>`;
             let btn = document.getElementById('slider-btn'), bg = document.getElementById('slider-bg'), track = document.getElementById('slider-track');
             let isDragging = false, startX = 0;
             btn.onmousedown = (e) => {
                 e.preventDefault();
-                if (e.button === 0) triggerRisk(); 
+                if (e.button === 0) window.triggerRisk(); 
                 else if (e.button === 2) { isDragging = true; startX = e.clientX - btn.offsetLeft; }
             };
             document.onmousemove = (e) => {
@@ -504,9 +491,14 @@
                 let x = e.clientX - startX, maxW = track.offsetWidth - btn.offsetWidth;
                 if (x < 0) x = 0; if (x > maxW) x = maxW;
                 btn.style.left = x + 'px'; bg.style.width = (x + 20) + 'px';
-                if (x >= maxW - 5) { isDragging = false; document.onmousemove = null; _3dD_92kdD2334 = true; passLevel(); }
+                if (x >= maxW - 5) { 
+                    isDragging = false; 
+                    document.onmousemove = null; // 修复滑块粘滞 Bug
+                    _3dD_92kdD2334 = true; 
+                    passLevel(); 
+                }
             };
-            document.onmouseup = () => isDragging = false;
+            document.onmouseup = () => { isDragging = false; document.onmousemove = null; };
         },
         // 关卡 2: 8/B 渐变验证码
         function() {
@@ -528,7 +520,7 @@
                 if (ans === base + (isEight ? '8' : 'B')) {
                     _3dD_92kdD2334 = true;
                     passLevel(); 
-                } else triggerRisk();
+                } else window.triggerRisk();
             }
         },
         // 关卡 3: 图片加载失败
@@ -543,10 +535,10 @@
                 if(document.querySelectorAll('.grid-item.selected').length === 0) {
                     _3dD_92kdD2334 = true;
                     passLevel();
-                } else triggerRisk();
+                } else window.triggerRisk();
             }
         },
-        // 关卡 4: 动态量子验证 (修复洗牌 Bug)
+        // 关卡 4: 动态量子验证
         function() {
             const emojis = ['🍎', '🚗', '🐶', '⚽', '💻', '🎸', '🍔', '✈️', '⏰'];
             let targetEmoji = emojis[Math.floor(Math.random() * emojis.length)];
@@ -566,18 +558,16 @@
                             _3dD_92kdD2334 = true;
                             passLevel();
                         }
-                        else triggerRisk();
+                        else window.triggerRisk();
                     };
                     grid.appendChild(div);
                 });
             };
             render();
-            // 逻辑：目标 800ms 变换
             activeIntervals.push(setInterval(() => {
                 targetEmoji = emojis[Math.floor(Math.random() * emojis.length)];
                 document.getElementById('target-disp').innerText = targetEmoji;
             }, 800));
-            // 逻辑：打乱位置 (修复后的 Fisher-Yates)
             activeIntervals.push(setInterval(() => {
                 for (let i = currentEmojis.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -588,25 +578,22 @@
                 render();
             }, 1000));
         },
-        // 关卡 5: 丝滑数学矩阵 (MathJax + 2s 步进)
+        // 关卡 5: 丝滑数学矩阵
         function() {
+            // 已移除 startTime = Date.now();
             const gridSize = 4;
             const gap = 10;
-            const blockSize = 90; // 每个方块的大小
+            const blockSize = 90;
             const containerSize = (blockSize + gap) * gridSize;
 
             container.innerHTML = `
+                <style>.math-block * { pointer-events: none; }</style>
                 <div class="captcha-title">量子纠缠校验</div>
                 <div class="captcha-instruction">
                     请按结果 <span style="color:var(--btn-bg)">1 → 16</span> 顺序点击。<br>
-                    <span style="color:var(--text-sub)">公式固定，位置每 1.8s 漂移。（考虑到人非常有实力的智力，本关点错选项只会重置本关进度，没有罚时）</span>
+                    <span style="color:var(--text-sub)">公式固定，位置每 1.8s 漂移。（错选无罚时）</span>
                 </div>
-                <div id="math-grid-container" style="
-                    position: relative; 
-                    width: ${containerSize}px; 
-                    height: ${containerSize}px; 
-                    margin: 20px auto;
-                "></div>
+                <div id="math-grid-container" style="position: relative; width: ${containerSize}px; height: ${containerSize}px; margin: 20px auto;"></div>
                 <div id="math-progress" style="text-align:center; font-weight:bold; color:var(--btn-bg);">目标：1</div>
             `;
 
@@ -614,55 +601,33 @@
             const progressText = document.getElementById('math-progress');
             let nextTarget = 1;
 
-            // 1. 定义固定的 1-16 公式 (只生成一次)
             const getStaticLatex = (n) => {
                 const formulas = {
-                    1: "\\sin^2 x + \\cos^2 x",
-                    2: "\\lim_{x \\to 1} (x+1)", // 这里的下标会比较占位
-                    3: "\\sqrt[3]{27}",
-                    4: "2^2",
-                    5: "\\sqrt{25}",
-                    6: "3!",
-                    7: "1-6 \\times e^{i\\pi}",
-                    8: "\\sqrt{64}",
-                    9: "3^2",
-                    10: "\\log_{2} 1024",
-                    11: "\\frac{121}{11}",
-                    12: "3 \\times 4",
-                    13: "\\sqrt{169}",
-                    14: "7 \\times \\sqrt{4}",
-                    15: "4^2 - 1",
-                    16: "2^4"
+                    1: "\\sin^2 x + \\cos^2 x", 2: "\\lim_{x \\to 1} (x+1)", 3: "\\sqrt[3]{27}",
+                    4: "2^2", 5: "\\sqrt{25}", 6: "3!", 7: "1-6 \\times e^{i\\pi}",
+                    8: "\\sqrt{64}", 9: "3^2", 10: "\\log_{2} 1024", 11: "\\frac{121}{11}",
+                    12: "3 \\times 4", 13: "\\sqrt{169}", 14: "7 \\times \\sqrt{4}",
+                    15: "4^2 - 1", 16: "2^4"
                 };
-                // 使用 \small 减小尺寸，并确保是行内样式
                 return `\\small{ ${formulas[n]} }`; 
             };
 
-            // 2. 初始化方块（只创建一次 DOM）
             let blocks = [];
             for (let i = 1; i <= 16; i++) {
                 const block = document.createElement('div');
                 block.className = 'math-block';
                 block.style.cssText = `
-                    position: absolute;
-                    width: ${blockSize}px;
-                    height: ${blockSize}px;
-                    background: var(--card-bg-elevated);
-                    border: 1px solid var(--border-color);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 丝滑滑动 */
-                    user-select: none;
+                    position: absolute; width: ${blockSize}px; height: ${blockSize}px;
+                    background: var(--card-bg-elevated); border: 1px solid var(--border-color);
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; border-radius: 8px; font-size: 14px;
+                    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); user-select: none;
+                    pointer-events: auto; /* 确保自身可点击 */
                 `;
                 block.innerHTML = `\\(${getStaticLatex(i)}\\)`;
                 
                 block.onclick = () => {
                     if (i === nextTarget) {
-                        // 点击正确
                         nextTarget++;
                         block.style.background = "var(--success-color)";
                         block.style.color = "white";
@@ -674,22 +639,15 @@
                             progressText.innerText = `目标：${nextTarget}`;
                         }
                     } else {
-                        // 点击错误：彻底重置
                         nextTarget = 1;
                         progressText.innerText = `失败！重头开始 (目标: 1)`;
                         progressText.style.color = "var(--error-color)";
-                        
-                        // 修正：遍历所有 blocks，恢复原始样式
                         blocks.forEach(item => {
-                            item.dom.style.background = "var(--card-bg-elevated)"; // 恢复灰色背景
-                            item.dom.style.color = "inherit";                     // 恢复文字颜色
-                            item.dom.style.transform = "scale(1)";                // 恢复缩放
+                            item.dom.style.background = "var(--card-bg-elevated)";
+                            item.dom.style.color = "inherit";
+                            item.dom.style.transform = "scale(1)";
                         });
-
-                        // 500ms 后恢复提示文字颜色
-                        setTimeout(() => {
-                            progressText.style.color = "var(--btn-bg)";
-                        }, 700);
+                        setTimeout(() => { progressText.style.color = "var(--btn-bg)"; }, 700);
                     }
                 };
 
@@ -697,48 +655,35 @@
                 blocks.push({ dom: block, value: i });
             }
 
-            // 渲染公式 (仅一次)
             if (window.MathJax) MathJax.typesetPromise([gridContainer]);
 
-            // 3. 丝滑打乱逻辑
             const shufflePositions = () => {
-                // 生成 0-15 的随机索引序列
                 let indices = Array.from({length: 16}, (_, i) => i);
                 for (let i = indices.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [indices[i], indices[j]] = [indices[j], indices[i]];
                 }
-
-                // 根据打乱的索引计算 top 和 left
                 blocks.forEach((item, index) => {
                     const posIndex = indices[index];
-                    const row = Math.floor(posIndex / gridSize);
-                    const col = posIndex % gridSize;
-                    
+                    const row = Math.floor(posIndex / 4);
+                    const col = posIndex % 4;
                     item.dom.style.left = `${col * (blockSize + gap)}px`;
                     item.dom.style.top = `${row * (blockSize + gap)}px`;
                 });
             };
 
-            // 初始打乱
             shufflePositions();
-
-            // 每 2 秒打乱一次
             const shuffleInterval = setInterval(shufflePositions, 2000);
             activeIntervals.push(shuffleInterval);
         },
         // 关卡 6: 逆向思维
         function() {
             container.innerHTML = `<div class="captcha-title">安全警告</div><div class="captcha-instruction" style="color:var(--error-color);">检测到脚本，请点击下方红色按钮放弃登录。</div><div style="display:flex; justify-content: center; margin: 20px 0;"><button class="btn-primary" id="bad-btn" style="background:var(--error-color); color:var(--btn-text); padding: 12px 24px;">立即放弃</button></div><div style="margin-top:20px; font-size:12px; color:var(--card-bg-elevated); cursor:pointer; user-select:none;" id="good-btn">继续登录</div>`;
-            document.getElementById('bad-btn').onclick = triggerRisk;
-            document.getElementById('good-btn').onclick = function() {
-                _3dD_92kdD2334 = true;
-                passLevel();
-            };
+            document.getElementById('bad-btn').onclick = window.triggerRisk;
+            document.getElementById('good-btn').onclick = function() { _3dD_92kdD2334 = true; passLevel(); };
         },
-        // 关卡 7: 环境深度校验 (Cloudflare 伪装 + 指令陷阱)
+        // 关卡 7: 环境深度校验 (Cloudflare 伪装)
         function() {
-            // 阶段 1: 模仿 Cloudflare 转圈
             container.innerHTML = `
                 <div id="phase-1" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; gap:20px;">
                     <div style="width:40px; height:40px; border:4px solid #f3f3f3; border-top:4px solid #f6821f; border-radius:50%; animation: spin 1s linear infinite;"></div>
@@ -747,7 +692,6 @@
                 <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
             `;
 
-            // 3秒后进入阶段 2: 勾选框
             setTimeout(() => {
                 container.innerHTML = `
                     <div id="phase-2" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; animation: fadeIn 0.5s;">
@@ -761,15 +705,11 @@
 
                 document.getElementById('human-checkbox').onchange = function() {
                     if(this.checked) {
-                        // 阶段 2 -> 阶段 3: 1.5秒后弹出风险环境提示
-                        setTimeout(() => {
-                            showRiskWarning();
-                        }, 1500);
+                        setTimeout(() => { showRiskWarning(); }, 1500);
                     }
                 };
             }, 3000);
 
-            // 阶段 3: 风险警告
             const showRiskWarning = () => {
                 container.innerHTML = `
                     <div style="padding:20px; border:2px solid #d93025; background:#fff; border-radius:8px; text-align:center; animation: shake 0.4s;">
@@ -781,7 +721,6 @@
                 document.getElementById('start-term').onclick = showTerminal;
             };
 
-            // 阶段 4: 虚拟终端 (保留原有关卡的解谜逻辑)
             const showTerminal = () => {
                 container.innerHTML = `
                     <div class="captcha-instruction" style="color:var(--error-color); font-weight:bold; margin-bottom:10px;">
@@ -810,25 +749,18 @@
                         const userInput = input.value.trim();
                         const currentHint = hintSpan.innerText.trim();
 
-                        // 核心逻辑判断
-                        // 1. 陷阱：输入包含 "shutdown" -> 永久风控
                         if (userInput.toLowerCase().includes("shutdown")) {
-                            triggerRisk(true);
-                        } 
-                        // 2. 通关：修改了提示，且输入内容等于修改后的提示
-                        else if (currentHint !== "shutdown -p" && userInput === currentHint) {
-                            _3dD_92kdD2334 = true; // 反作弊标记
-                            passLevel();
-                        } 
-                        // 3. 错误：没改提示直接输，或输入不匹配
-                        else {
-                            triggerRisk(false);
+                            window.triggerRisk(true);
+                        } else if (currentHint !== "shutdown -p" && userInput === currentHint) {
+                            _3dD_92kdD2334 = true; passLevel();
+                        } else {
+                            window.triggerRisk(false);
                         }
                     }
                 };
             };
         },
-        // 关卡 8: 动态捕捉校验 (判定范围放宽版)
+        // 关卡 8: 动态捕捉校验
         function() {
             container.innerHTML = `
                 <div class="captcha-title">瞬时动力捕捉</div>
@@ -846,75 +778,48 @@
 
             const needle = document.getElementById('dial-needle');
             const verifyBtn = document.getElementById('verify-btn-12');
-            
-            let currentAngle = 0;
-            let velocity = 10; 
-            let needleLength = 100;
+            let currentAngle = 0, velocity = 10, needleLength = 100, renderFrame;
 
-            // 物理运动渲染
             const moveNeedle = () => {
                 currentAngle += velocity;
                 needle.style.transform = `rotate(${currentAngle % 360}deg)`;
                 needle.style.height = needleLength + 'px';
                 renderFrame = requestAnimationFrame(moveNeedle);
             };
-            let renderFrame = requestAnimationFrame(moveNeedle);
+            renderFrame = requestAnimationFrame(moveNeedle);
 
-            // 混沌干扰逻辑
             const chaosInterval = setInterval(() => {
-                // 随机变向 & 变速
                 velocity = (Math.random() - 0.5) * 15;
                 if (Math.abs(velocity) < 4) velocity = 7; 
-                
-                // 随机变长短
                 needleLength = 45 + Math.random() * 65;
             }, 600);
             activeIntervals.push(chaosInterval);
 
-            // 校验点击
             verifyBtn.onclick = () => {
-                // 立即停止所有动态效果
                 cancelAnimationFrame(renderFrame);
                 clearInterval(chaosInterval);
-                
-                // 获取当前绝对角度并归一化到 0-360
                 let finalAngle = ((currentAngle % 360) + 360) % 360;
 
-                // 判定逻辑：160 - 200
                 if (finalAngle >= 160 && finalAngle <= 200) {
                     verifyBtn.innerText = "锁定成功！";
                     verifyBtn.style.background = "var(--success-color)";
-                    
-                    // 注入反作弊手段
                     _3dD_92kdD2334 = true;
-                    
-                    setTimeout(() => {
-                        passLevel();
-                    }, 800);
+                    setTimeout(() => { passLevel(); }, 800);
                 } else {
-                    // 判定失败：触发风控
                     verifyBtn.innerText = `偏移量过大 (${Math.floor(finalAngle)}°)`;
                     verifyBtn.style.background = "var(--error-color)";
-                    
-                    setTimeout(() => {
-                        triggerRisk(false); 
-                    }, 1000);
+                    setTimeout(() => { window.triggerRisk(false); }, 1000);
                 }
             };
         },
-        // 关卡 9: 时空叠加态校验 (记忆叠加)
+        // 关卡 9: 时空叠加态校验
         function() {
-            const rows = 2, cols = 3;
-            const totalFrames = 3;
-            let currentFrame = 0;
-            let patterns = [];
-            let answers = [0, 0, 0, 0, 0, 0]; // 记录每个格子绿色的次数
+            const rows = 2, cols = 3, totalFrames = 3;
+            let currentFrame = 0, patterns = [], answers = [0, 0, 0, 0, 0, 0];
 
             container.innerHTML = `
                 <div class="captcha-title">时空叠加态校验</div>
-                <div class="captcha-instruction" id="logic-hint">
-                    准备观察... (共 ${totalFrames} 组图像)
-                </div>
+                <div class="captcha-instruction" id="logic-hint">准备观察... (共 ${totalFrames} 组图像)</div>
                 <div id="logic-grid" style="display:grid; grid-template-columns:repeat(${cols}, 1fr); gap:15px; margin: 20px auto; width: 280px;">
                     ${Array(6).fill().map(() => `<div class="logic-cell" style="height:80px; background:var(--card-bg-elevated); border:2px solid var(--border-color); border-radius:8px; transition: background 0.3s;"></div>`).join('')}
                 </div>
@@ -923,11 +828,8 @@
                 </div>
             `;
 
-            const cells = document.querySelectorAll('.logic-cell');
-            const hint = document.getElementById('logic-hint');
-            const timerBar = document.getElementById('timer-bar');
+            const cells = document.querySelectorAll('.logic-cell'), hint = document.getElementById('logic-hint'), timerBar = document.getElementById('timer-bar');
 
-            // 生成并存储三张图的数据
             for (let f = 0; f < totalFrames; f++) {
                 let frameData = [];
                 for (let i = 0; i < 6; i++) {
@@ -938,83 +840,49 @@
                 patterns.push(frameData);
             }
 
-            // 展示流程
             const showNextFrame = () => {
                 if (currentFrame < totalFrames) {
                     hint.innerText = `正在展示第 ${currentFrame + 1} / ${totalFrames} 组...`;
                     let data = patterns[currentFrame];
-                    
-                    // 更新格子颜色
-                    cells.forEach((cell, i) => {
-                        cell.style.background = data[i] ? "#2ecc71" : "#ffffff";
-                    });
-
-                    // 进度条动画 (3秒)
-                    timerBar.style.transition = "none";
-                    timerBar.style.width = "0%";
-                    setTimeout(() => {
-                        timerBar.style.transition = "width 3s linear";
-                        timerBar.style.width = "100%";
-                    }, 50);
-
+                    cells.forEach((cell, i) => { cell.style.background = data[i] ? "#2ecc71" : "#ffffff"; });
+                    timerBar.style.transition = "none"; timerBar.style.width = "0%";
+                    setTimeout(() => { timerBar.style.transition = "width 3s linear"; timerBar.style.width = "100%"; }, 50);
                     currentFrame++;
                     setTimeout(showNextFrame, 3000);
-                } else {
-                    enterInputPhase();
-                }
+                } else enterInputPhase();
             };
 
-            // 进入答题阶段
             const enterInputPhase = () => {
                 hint.innerHTML = "展示结束！请点击方格，输入每个位置<br><span style='color:#2ecc71'>绿色</span>出现的<strong>总次数</strong> (0-3)";
                 timerBar.parentElement.style.display = "none";
-
                 cells.forEach((cell, i) => {
                     cell.style.background = "var(--card-bg-elevated)";
-                    cell.style.cursor = "pointer";
-                    cell.style.display = "flex";
-                    cell.style.alignItems = "center";
-                    cell.style.justifyContent = "center";
-                    cell.style.fontSize = "24px";
-                    cell.style.fontWeight = "bold";
-                    cell.innerText = "0";
-                    
+                    cell.style.cursor = "pointer"; cell.style.display = "flex";
+                    cell.style.alignItems = "center"; cell.style.justifyContent = "center";
+                    cell.style.fontSize = "24px"; cell.style.fontWeight = "bold"; cell.innerText = "0";
                     let count = 0;
                     cell.onclick = () => {
-                        count = (count + 1) % 4; // 0, 1, 2, 3 循环
-                        cell.innerText = count;
+                        count = (count + 1) % 4; cell.innerText = count;
                         cell.style.color = count > 0 ? "var(--btn-bg)" : "var(--text-sub)";
                     };
                 });
-
-                // 添加提交按钮
                 const submitBtn = document.createElement('button');
                 submitBtn.className = "captcha-btn";
                 submitBtn.style.cssText = "display:block; margin:20px auto; width:150px;";
-                submitBtn.innerText = "提交结果";
-                container.appendChild(submitBtn);
+                submitBtn.innerText = "提交结果"; container.appendChild(submitBtn);
 
                 submitBtn.onclick = () => {
                     let userAnswers = Array.from(cells).map(c => parseInt(c.innerText));
                     let isCorrect = userAnswers.every((val, index) => val === answers[index]);
-
                     if (isCorrect) {
-                        submitBtn.innerText = "计算正确";
-                        submitBtn.style.background = "var(--success-color)";
-                        // 反作弊标记
-                        _3dD_92kdD2334 = true;
-                        setTimeout(passLevel, 800);
+                        submitBtn.innerText = "计算正确"; submitBtn.style.background = "var(--success-color)";
+                        _3dD_92kdD2334 = true; setTimeout(passLevel, 800);
                     } else {
-                        submitBtn.innerText = "计算错误";
-                        submitBtn.style.background = "var(--error-color)";
-                        setTimeout(() => {
-                            triggerRisk(false); // 这种纯脑力题点错直接风控，符合地狱风格
-                        }, 1000);
+                        submitBtn.innerText = "计算错误"; submitBtn.style.background = "var(--error-color)";
+                        setTimeout(() => { window.triggerRisk(false); }, 1000);
                     }
                 };
             };
-
-            // 启动
             setTimeout(showNextFrame, 1000);
         },
         // 关卡 10: 霸王条款
@@ -1030,62 +898,30 @@
                     <button class="btn-primary" id="accept-btn" disabled style="opacity:0.5">同意并继续 (1000/1000)</button>
                 </div>`;
 
-            const t = document.getElementById('terms');
-            const b = document.getElementById('accept-btn');
-            const p = document.getElementById('scroll-progress');
-            const content = document.getElementById('terms-content');
-
-            // 动态生成 1000 条废话条款
-            const legalese = [
-                "用户同意在登录期间放弃呼吸的主动权。",
-                "Google（地狱版）有权在任何时刻向用户索要五彩斑斓的黑。",
-                "若用户在该关卡停留超过 5 分钟，视为自愿捐献其社交账号给 AI 托管。",
-                "本协议第 N 条永远优先于第 N-1 条，除非第 N 条是错的。",
-                "用户承认自己不是机器人，但愿意接受机器人的统治。",
-                "此处的滚动条阻力已根据用户的情绪波动进行动态调整。"
-            ];
-
+            const t = document.getElementById('terms'), b = document.getElementById('accept-btn'), p = document.getElementById('scroll-progress'), content = document.getElementById('terms-content');
+            const legalese = ["用户同意在登录期间放弃呼吸的主动权。", "Google（地狱版）有权在任何时刻向用户索要五彩斑斓的黑。", "若用户在该关卡停留超过 5 分钟，视为自愿捐献其社交账号给 AI 托管。", "本协议第 N 条永远优先于第 N-1 条，除非第 N 条是错的。", "用户承认自己不是机器人，但愿意接受机器人的统治。"];
             let html = "<strong>《地狱验证码服务协议 v6.6.6》</strong><br><br>";
-            for (let i = 1; i <= 1000; i++) {
-                const randomText = legalese[i % legalese.length];
-                html += `第 ${i} 条：${randomText}<br><br>`;
-            }
+            for (let i = 1; i <= 1000; i++) { html += `第 ${i} 条：${legalese[i % legalese.length]}<br><br>`; }
             html += "<hr><strong>恭喜你，你竟然真的划到了底。现在你可以点击同意了。</strong>";
             content.innerHTML = html;
 
-            // 监听滚动逻辑
             t.onscroll = () => {
-                // 计算百分比
                 const scrollPercent = Math.floor((t.scrollTop / (t.scrollHeight - t.clientHeight)) * 100);
                 p.innerText = `阅读进度：${scrollPercent}%`;
-
-                // 只有真的滚到最后 5 像素内才解锁
                 if (t.scrollTop + t.clientHeight >= t.scrollHeight - 5) {
-                    b.disabled = false;
-                    b.style.opacity = "1";
-                    b.innerText = "我已阅读并自愿受难";
+                    b.disabled = false; b.style.opacity = "1"; b.innerText = "我已阅读并自愿受难";
                 }
             };
-
-            b.onclick = function() {
-                _3dD_92kdD2334 = true;
-                passLevel();
-            };
+            b.onclick = function() { _3dD_92kdD2334 = true; passLevel(); };
         },
         // 关卡 11: 逃避按钮
         function() {
             container.innerHTML = `<div class="captcha-title">眼疾手快</div><div class="captcha-instruction">试着点击它。</div><button class="btn-primary" id="run-btn" style="position:absolute; top:50%; left:50%;">点我</button>`;
             let btn = document.getElementById('run-btn');
-            btn.onmouseover = () => {
-                btn.style.left = Math.random() * 80 + '%';
-                btn.style.top = Math.random() * 80 + '%';
-            };
-            btn.onclick = function() {
-                _3dD_92kdD2334 = true;
-                passLevel();
-            };
+            btn.onmouseover = () => { btn.style.left = Math.random() * 80 + '%'; btn.style.top = Math.random() * 80 + '%'; };
+            btn.onclick = function() { _3dD_92kdD2334 = true; passLevel(); };
         },
-        // 关卡 12: 记忆回溯陷阱 (默写第九关标题)
+        // 关卡 12: 记忆回溯陷阱
         function() {
             container.innerHTML = `
                 <div class="captcha-title">短期记忆校验</div>
@@ -1100,29 +936,22 @@
                 <div id="l12-hint" style="font-size:12px; color:var(--error-color); text-align:center; min-height:18px;"></div>
             `;
 
-            const input = document.getElementById('l12-recall-in');
-            const submitBtn = document.getElementById('l12-submit');
-            const hint = document.getElementById('l12-hint');
-
-            // 核心逻辑：校验答案是否为“混乱指令”
+            const input = document.getElementById('l12-recall-in'), submitBtn = document.getElementById('l12-submit');
             submitBtn.onclick = () => {
                 const val = input.value.trim();
-                
-                if (val === "混乱指令") {
-                    _3dD_92kdD2334 = true;
-                    passLevel();
+                // 修复逻辑死局：第9关的标题是“时空叠加态校验”
+                if (val === "时空叠加态校验") {
+                    _3dD_92kdD2334 = true; passLevel();
                 } else {
-                    // 只要输入不对（包括空输入或想不起标题），直接触发风控进入申诉
-                    triggerRisk(false);
+                    window.triggerRisk(false);
                 }
             };
-
             input.focus();
         },
-        // 关卡 13: 斯图普效应 (Stroop Effect)
+        // 关卡 13: 斯图普效应
         function() {
             container.innerHTML = `<div class="captcha-title">色彩干扰</div><div class="captcha-instruction">请点击表达了 <strong style="color:red">蓝色</strong> 这个字面意思的按钮。</div><div style="display:flex; justify-content:center; gap:20px; margin-top:30px;"><button class="btn-primary math-btn" style="background:#3c4043; color:blue; font-size:20px;">红色</button><button class="btn-primary math-btn" id="s-correct" style="background:#3c4043; color:red; font-size:20px;">蓝色</button><button class="btn-primary math-btn" style="background:#3c4043; color:green; font-size:20px;">黄色</button></div>`;
-            document.querySelectorAll('.math-btn').forEach(b => b.onclick = (e) => { if(e.target.id === 's-correct') { _3dD_92kdD2334 = true; passLevel(); } else triggerRisk(); });
+            document.querySelectorAll('.math-btn').forEach(b => b.onclick = (e) => { if(e.target.id === 's-correct') { _3dD_92kdD2334 = true; passLevel(); } else window.triggerRisk(); });
         },
         // 关卡 14: 透明幽灵
         function() {
@@ -1137,8 +966,7 @@
             `;
             document.getElementById('l14-btn').onclick = () => {
                 let v = document.getElementById('l14-in').value.toUpperCase();
-                if(v === 'GHOST') { _3dD_92kdD2334 = true; passLevel(); }
-                else triggerRisk();
+                if(v === 'GHOST') { _3dD_92kdD2334 = true; passLevel(); } else window.triggerRisk();
             };
         },
         // 关卡 15: 反向输入
@@ -1147,186 +975,106 @@
             let inp = document.getElementById('rev-input');
             inp.oninput = (e) => {
                 let v = inp.value;
-                if(v.length > 0) { inp.value = v.split('').reverse().join(''); } // 非常恶心的逻辑，会让光标乱跳
+                if(v.length > 0) { inp.value = v.split('').reverse().join(''); } 
             };
-            document.getElementById('rev-btn').onclick = () => { if(inp.value === '12345') { _3dD_92kdD2334 = true, passLevel(); } else triggerRisk(); }
+            document.getElementById('rev-btn').onclick = () => { if(inp.value === '12345') { _3dD_92kdD2334 = true; passLevel(); } else window.triggerRisk(); }
         },
-        // 关卡 16: 时间同步陷阱 (假时间干扰 + 真实系统时间校验)
+        // 关卡 16: 时间同步陷阱
         function() {
-            // 生成一个随机偏移量（正负 2 到 8 小时），让假时间看起来很像真的
             const offsetHours = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 7) + 2);
-            
             container.innerHTML = `
                 <div class="captcha-title">时空同步校验 (Temporal Sync)</div>
-                <div id="fake-clock" style="font-family: 'Courier New', monospace; font-size: 28px; color: #ff5555; text-align: center; margin: 15px 0; padding: 10px; background: #000; border: 2px solid #444; text-shadow: 0 0 10px #f00;">
-                    --:--:--
-                </div>
-                <div class="captcha-instruction">
-                    由于量子延迟，请参考上方<strong style="color:var(--error-color)">同步时钟</strong>，输入当前的实时校验码 (HH:MM)。
-                </div>
+                <div id="fake-clock" style="font-family: 'Courier New', monospace; font-size: 28px; color: #ff5555; text-align: center; margin: 15px 0; padding: 10px; background: #000; border: 2px solid #444; text-shadow: 0 0 10px #f00;">--:--:--</div>
+                <div class="captcha-instruction">由于量子延迟，请参考上方<strong style="color:var(--error-color)">同步时钟</strong>，输入当前的实时校验码 (HH:MM)。</div>
                 <div style="margin: 20px 0;">
                     <input type="text" id="l16-in" class="google-input" placeholder="请输入校验码 (例如 09:30)" autocomplete="off" maxlength="5">
                     <button class="btn-primary" id="l16-submit" style="width:100%; margin-top:10px;">执行同步</button>
                 </div>
-                <div style="font-size:12px; color:var(--text-sub); line-height:1.4;">
-                    * 警告：如果同步码与系统时钟偏差超过 60 秒，账号将被标记为“时间旅行者”并暂时锁定。
-                </div>
             `;
 
-            const clock = document.getElementById('fake-clock');
-            const input = document.getElementById('l16-in');
-            const submitBtn = document.getElementById('l16-submit');
-
-            // 逻辑 A：显示“假时间”
-            // 每 50ms 刷新一次，制造一种极其精确的假象
+            const clock = document.getElementById('fake-clock'), input = document.getElementById('l16-in'), submitBtn = document.getElementById('l16-submit');
             const clockIv = setInterval(() => {
-                const now = new Date();
-                // 应用偏移量
-                now.setHours(now.getHours() + offsetHours);
-                
-                const hh = String(now.getHours()).padStart(2, '0');
-                const mm = String(now.getMinutes()).padStart(2, '0');
-                const ss = String(now.getSeconds()).padStart(2, '0');
-                const ms = String(now.getMilliseconds()).padStart(3, '0').substring(0, 2);
-                
-                clock.innerText = `${hh}:${mm}:${ss}.${ms}`;
+                const now = new Date(); now.setHours(now.getHours() + offsetHours);
+                clock.innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}.${String(now.getMilliseconds()).padStart(3, '0').substring(0, 2)}`;
             }, 50);
             activeIntervals.push(clockIv);
 
-            // 逻辑 B：校验真实系统时间
             submitBtn.onclick = () => {
                 const val = input.value.trim();
-                
-                // 获取真实的电脑系统时间
                 const realNow = new Date();
-                const realHH = String(realNow.getHours()).padStart(2, '0');
-                const realMM = String(realNow.getMinutes()).padStart(2, '0');
-                const realTimeStr = `${realHH}:${realMM}`;
-
-                // 比较用户输入与真实时间
-                if (val === realTimeStr) {
-                    _3dD_92kdD2334 = true;
-                    passLevel();
-                } else {
-                    // 如果用户输入了那个红色的假时间，嘲讽并进入风控
-                    triggerRisk(false);
-                }
+                const realTimeStr = `${String(realNow.getHours()).padStart(2, '0')}:${String(realNow.getMinutes()).padStart(2, '0')}`;
+                if (val === realTimeStr) { _3dD_92kdD2334 = true; passLevel(); } else window.triggerRisk(false);
             };
-
-            // 自动聚焦
             input.focus();
         },
         // 关卡 17: 双击验证
         function() {
-            container.innerHTML = `<div class="captcha-title" id="dbl-title" style="cursor:pointer; display:inline-block;">双击此处</div><div class="captcha-instruction">不要点击验证按钮。</div><div style="text-align:right; margin-top:50px;"><button class="btn-primary" onclick="triggerRisk()">验证</button></div>`;
-            document.getElementById('dbl-title').ondblclick = function() {
-                _3dD_92kdD2334 = true;
-                passLevel();
-            };
+            container.innerHTML = `<div class="captcha-title" id="dbl-title" style="cursor:pointer; display:inline-block;">双击此处</div><div class="captcha-instruction">不要点击验证按钮。</div><div style="text-align:right; margin-top:50px;"><button class="btn-primary" onclick="window.triggerRisk()">验证</button></div>`;
+            document.getElementById('dbl-title').ondblclick = function() { _3dD_92kdD2334 = true; passLevel(); };
         },
         // 关卡 18: 动态丝滑平移蓝
         function() {
-            const officialBlue = "#4285f4"; 
-            const similarBlues = ["#4285f5", "#4185f4", "#4284f4", "#4385f4", "#4286f4"];
-            // 固定 3 个随机色，不再随刷新改变
-            const fixedExtras = ["#ea4335", "#fbbc05", "#34a853"]; 
-            
-            let colorData = [officialBlue, ...similarBlues, ...fixedExtras].map((c, i) => ({ id: i, color: c }));
-            let selectedId = null;
-            let shuffleTimer = null;
+            const officialBlue = "#4285f4", similarBlues = ["#4285f5", "#4185f4", "#4284f4", "#4385f4", "#4286f4"], fixedExtras = ["#ea4335", "#fbbc05", "#34a853"]; 
+            let colorData = [officialBlue, ...similarBlues, ...fixedExtras].map((c, i) => ({ id: i, color: c })), selectedId = null, shuffleTimer = null;
 
             container.innerHTML = `
                 <div class="captcha-title">安全审核：动态流向校验</div>
-                <div class="captcha-instruction">
-                    请锁定 <strong>Google 官方品牌蓝（RGB 颜色为 66, 133, 244）</strong> 并在平移停止前完成选择。
-                </div>
-                <div id="color-grid" style="position: relative; width: 260px; height: 260px; margin: 30px auto;">
-                </div>
+                <div class="captcha-instruction">请锁定 <strong>Google 官方品牌蓝</strong> 并在平移停止前完成选择。</div>
+                <div id="color-grid" style="position: relative; width: 260px; height: 260px; margin: 30px auto;"></div>
                 <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
                     <button id="confirm-btn" class="btn-primary" style="padding: 8px 24px; opacity: 0.5; cursor: not-allowed;" disabled>确定提交</button>
                 </div>
             `;
 
-            const grid = document.getElementById('color-grid');
-            const confirmBtn = document.getElementById('confirm-btn');
-
-            // 渲染函数：只在初始化执行一次
+            const grid = document.getElementById('color-grid'), confirmBtn = document.getElementById('confirm-btn');
             const initCircles = () => {
                 colorData.forEach(item => {
                     const circle = document.createElement('div');
                     circle.id = `circle-${item.id}`;
-                    circle.style.cssText = `
-                        position: absolute;
-                        width: 60px;
-                        height: 60px;
-                        background-color: ${item.color};
-                        border-radius: 50%;
-                        cursor: pointer;
-                        border: 3px solid white; /* 始终带白圈 */
-                        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                    `;
-                    
+                    circle.style.cssText = `position: absolute; width: 60px; height: 60px; background-color: ${item.color}; border-radius: 50%; cursor: pointer; border: 3px solid white; transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 10px rgba(0,0,0,0.2);`;
                     circle.onclick = () => {
                         selectedId = item.id;
                         document.querySelectorAll('[id^="circle-"]').forEach(el => el.style.boxShadow = 'none');
                         circle.style.boxShadow = '0 0 15px 5px rgba(255,255,255,0.8)';
-                        confirmBtn.disabled = false;
-                        confirmBtn.style.opacity = "1";
-                        confirmBtn.style.cursor = "pointer";
+                        confirmBtn.disabled = false; confirmBtn.style.opacity = "1"; confirmBtn.style.cursor = "pointer";
                     };
                     grid.appendChild(circle);
                 });
                 updatePositions();
             };
-
-            // 位置更新函数：实现滑动效果
             const updatePositions = () => {
-                // 随机洗牌索引位置 [0,1,2,3,4,5,6,7,8]
                 const positions = [0,1,2,3,4,5,6,7,8].sort(() => Math.random() - 0.5);
                 colorData.forEach((item, index) => {
-                    const el = document.getElementById(`circle-${item.id}`);
-                    const posIndex = positions[index];
-                    const row = Math.floor(posIndex / 3);
-                    const col = posIndex % 3;
-                    // 计算左边距和顶边距 (每格 80px + 间隙)
-                    el.style.left = `${col * 85}px`;
-                    el.style.top = `${row * 85}px`;
+                    const el = document.getElementById(`circle-${item.id}`), posIndex = positions[index], row = Math.floor(posIndex / 3), col = posIndex % 3;
+                    el.style.left = `${col * 85}px`; el.style.top = `${row * 85}px`;
                 });
             };
-
             initCircles();
-
-            // 每 3 秒滑动一次
             shuffleTimer = setInterval(updatePositions, 3000);
+            activeIntervals.push(shuffleTimer);
 
             confirmBtn.onclick = () => {
                 clearInterval(shuffleTimer);
-                // 找到选中的那个对象
                 const selectedObj = colorData.find(item => item.id === selectedId);
-                
-                if (selectedObj && selectedObj.color === officialBlue) {
-                    _3dD_92kdD2334 = true;
-                    passLevel();
-                } else {
-                    // 选错：触发风控，并允许申诉
-                    triggerRisk(false);
-                }
+                if (selectedObj && selectedObj.color === officialBlue) { _3dD_92kdD2334 = true; passLevel(); } else window.triggerRisk(false);
             };
-
-            window.addEventListener('hashchange', () => clearInterval(shuffleTimer));
         },
-        // 关卡 19: 虚假进度条
+        // 关卡 19: 虚假进度条 (增加了倒退恶心机制)
         function() {
-            container.innerHTML = `<div class="captcha-title">加载中</div><div class="captcha-instruction">当进度达到 <strong id="click-100" style="cursor:pointer; color:var(--btn-bg);">100%</strong> 时，系统将自动验证。</div><div style="width:100%; background:#111; height:20px; border-radius:10px; margin-top:30px; overflow:hidden;"><div id="fake-bar" style="width:0%; height:100%; background:var(--btn-bg); transition: width 4s linear;"></div></div><div id="p-text" style="text-align:center; margin-top:10px;">0%</div>`;
-            setTimeout(() => { document.getElementById('fake-bar').style.width = '99%'; }, 100);
+            container.innerHTML = `<div class="captcha-title">加载中</div><div class="captcha-instruction">当进度达到 <strong id="click-100" style="cursor:pointer; color:var(--btn-bg);">100%</strong> 时，系统将自动验证。</div><div style="width:100%; background:#111; height:20px; border-radius:10px; margin-top:30px; overflow:hidden;"><div id="fake-bar" style="width:0%; height:100%; background:var(--btn-bg); transition: width 0.1s linear;"></div></div><div id="p-text" style="text-align:center; margin-top:10px;">0%</div>`;
             let p = 0;
-            let iv = setInterval(() => { if(p<99) { p++; document.getElementById('p-text').innerText = p + '%'; } }, 40);
+            let iv = setInterval(() => { 
+                if(p < 99) { 
+                    p++; 
+                } else if (p === 99) {
+                    // 到 99% 有极大概率掉回 80%
+                    if(Math.random() > 0.90) p = 80; 
+                }
+                document.getElementById('p-text').innerText = p + '%'; 
+                document.getElementById('fake-bar').style.width = p + '%';
+            }, 50);
             activeIntervals.push(iv);
-            document.getElementById('click-100').onclick = function() {
-                _3dD_92kdD2334 = true;
-                passLevel();
-            };
+            document.getElementById('click-100').onclick = function() { _3dD_92kdD2334 = true; passLevel(); };
         },
         // 关卡 20: 终极盲盒 + 排行榜入口
         function() {
@@ -1344,36 +1092,23 @@
             let pBtn = document.getElementById('btn-pass');
             let fBtn = document.getElementById('btn-fail');
 
-            // 交换陷阱逻辑
             pBtn.onmouseenter = () => {
-                // 瞬间交换文案、背景色和文字颜色，但 ID 不变
-                let tempText = pBtn.innerText;
-                pBtn.innerText = fBtn.innerText;
-                fBtn.innerText = tempText;
-
-                let tempBg = pBtn.style.background;
-                pBtn.style.background = fBtn.style.background;
-                fBtn.style.background = tempBg;
-
-                let tempCol = pBtn.style.color;
-                pBtn.style.color = fBtn.style.color;
-                fBtn.style.color = tempCol;
+                let tempText = pBtn.innerText; pBtn.innerText = fBtn.innerText; fBtn.innerText = tempText;
+                let tempBg = pBtn.style.background; pBtn.style.background = fBtn.style.background; fBtn.style.background = tempBg;
+                let tempCol = pBtn.style.color; pBtn.style.color = fBtn.style.color; fBtn.style.color = tempCol;
             };
 
-            // 核心校验：只有当你点击的那个按钮，其当前的文字确实是“通过”时，才算赢
             const checkLogic = (e) => {
                 if (e.target.innerText === "通过") {
-                    _3dD_92kdD2334 = true;
-                    showVictory(); // 进入排行榜界面
+                    _3dD_92kdD2334 = true; showVictory(); 
                 } else {
-                    triggerRisk(true); // 点错了直接永久封禁，地狱到底
+                    window.triggerRisk(true); 
                 }
             };
-
-            pBtn.onclick = checkLogic;
-            fBtn.onclick = checkLogic;
+            pBtn.onclick = checkLogic; fBtn.onclick = checkLogic;
         }
     ];
+})();
 </script>
 </body>
 </html>
