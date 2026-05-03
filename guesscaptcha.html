@@ -1088,8 +1088,9 @@
             `;
 
             const chaosBox = document.getElementById('chaos-container');
-            const words = ["通过", "通讨", "通迁", "通迈", "勇过", "诵过", "迵过", "通过 ", " 运行 ", "封号"];
+            const words = ["通过", "通讨", "通迁", "通迈", "勇过", "诵过", "迵过", "通过  ", " 运行 ", "封号"];
             const btnCount = 12;
+            const MAX_SPEED = 12;
             let buttons = [];
 
             for (let i = 0; i < btnCount; i++) {
@@ -1114,7 +1115,8 @@
 
                 btn.onmouseenter = () => {
                     // 逃逸算法：鼠标靠近时不但变文字，速度还会激增
-                    dx *= 1.4; dy *= 1.4;
+                    dx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, dx * 1.4));
+                    dy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, dy * 1.4));
                     if (Math.random() > 0.3) {
                         btn.innerText = words[Math.floor(Math.random() * words.length)];
                         btn.style.background = Math.random() > 0.5 ? "var(--success-color)" : "var(--error-color)";
