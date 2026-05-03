@@ -1079,33 +1079,79 @@
         // 关卡 20: 终极盲盒 + 排行榜入口
         function() {
             container.innerHTML = `
-                <div class="captcha-title">最终校验：逻辑坍缩</div>
-                <div class="captcha-instruction">
-                    请点击绿色的<strong style="color:var(--success-color)">“通过”</strong>按钮。
-                    <br><small style="color:var(--text-sub)">注意：观察力也是人类的特质。</small>
+                <div class="captcha-title">最终校验：逻辑坍缩 (The Turing Labyrinth)</div>
+                <div class="captcha-instruction" id="l20-hint">
+                    请锁定并点击真正的 <strong style="color:var(--success-color)">“通过”</strong> 按钮。
+                    <br><small style="color:var(--text-sub)">警告：观测即干扰，视觉颜色与文字状态处于量子叠加态。</small>
                 </div>
-                <div style="display:flex; justify-content:center; gap:20px; margin-top:40px;">
-                    <button class="btn-primary" id="btn-pass" style="background:var(--success-color); color:#202124;">通过</button>
-                    <button class="btn-primary" id="btn-fail" style="background:var(--error-color); color:#fff;">封号</button>
-                </div>`;
+                <div id="chaos-container" style="position:relative; width:100%; height:320px; margin-top:15px; border:2px solid #333; overflow:hidden; background:#050505; border-radius:12px;"></div>
+            `;
 
-            let pBtn = document.getElementById('btn-pass');
-            let fBtn = document.getElementById('btn-fail');
+            const chaosBox = document.getElementById('chaos-container');
+            const words = ["通过", "通讨", "通迁", "通迈", "勇过", "诵过", "迵过", "通过 ", " 运行 ", "封号"];
+            const btnCount = 12;
+            let buttons = [];
 
-            pBtn.onmouseenter = () => {
-                let tempText = pBtn.innerText; pBtn.innerText = fBtn.innerText; fBtn.innerText = tempText;
-                let tempBg = pBtn.style.background; pBtn.style.background = fBtn.style.background; fBtn.style.background = tempBg;
-                let tempCol = pBtn.style.color; pBtn.style.color = fBtn.style.color; fBtn.style.color = tempCol;
-            };
+            for (let i = 0; i < btnCount; i++) {
+                const btn = document.createElement('button');
+                btn.className = "btn-primary";
+                
+                // 初始物理属性
+                let x = Math.random() * (chaosBox.offsetWidth - 80);
+                let y = Math.random() * (chaosBox.offsetHeight - 40);
+                let dx = (Math.random() - 0.5) * 10;
+                let dy = (Math.random() - 0.5) * 10;
 
-            const checkLogic = (e) => {
-                if (e.target.innerText === "通过") {
-                    _3dD_92kdD2334 = true; showVictory(); 
-                } else {
-                    window.triggerRisk(true); 
-                }
-            };
-            pBtn.onclick = checkLogic; fBtn.onclick = checkLogic;
+                btn.style.cssText = `position:absolute; padding:6px 14px; font-size:14px; transition: background 0.2s, color 0.2s; white-space:nowrap; left:0; top:0; transform:translate(${x}px, ${y}px);`;
+                btn.innerText = words[Math.floor(Math.random() * words.length)];
+                
+                const update = () => {
+                    x += dx; y += dy;
+                    if (x <= 0 || x >= chaosBox.offsetWidth - btn.offsetWidth) dx *= -1;
+                    if (y <= 0 || y >= chaosBox.offsetHeight - btn.offsetHeight) dy *= -1;
+                    btn.style.transform = `translate(${x}px, ${y}px)`;
+                };
+
+                btn.onmouseenter = () => {
+                    // 逃逸算法：鼠标靠近时不但变文字，速度还会激增
+                    dx *= 1.4; dy *= 1.4;
+                    if (Math.random() > 0.3) {
+                        btn.innerText = words[Math.floor(Math.random() * words.length)];
+                        btn.style.background = Math.random() > 0.5 ? "var(--success-color)" : "var(--error-color)";
+                        btn.style.color = btn.style.background.includes('81c784') ? "#000" : "#fff";
+                    }
+                };
+
+                btn.onclick = () => {
+                    // 判定：只有纯粹的“通过”两个字才算对，带空格或其它字的都视为失败
+                    if (btn.innerText === "通过") {
+                        _3dD_92kdD2334 = true;
+                        activeIntervals.forEach(clearInterval);
+                        showVictory();
+                    } else {
+                        window.triggerRisk(true);
+                    }
+                };
+
+                chaosBox.appendChild(btn);
+                buttons.push({ el: btn, update });
+            }
+
+            // 物理引擎循环
+            const moveIv = setInterval(() => {
+                buttons.forEach(b => b.update());
+            }, 30);
+            activeIntervals.push(moveIv);
+
+            // 环境干扰循环：随机交换所有按钮的状态
+            const swapIv = setInterval(() => {
+                buttons.forEach(b => {
+                    if (Math.random() > 0.8) {
+                        b.el.innerText = words[Math.floor(Math.random() * words.length)];
+                    }
+                });
+            }, 1000);
+            activeIntervals.push(swapIv);
         }
     ];
 })();
