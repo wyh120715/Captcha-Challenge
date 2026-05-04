@@ -886,6 +886,24 @@
         // 关卡 10: 霸王条款
         function() {
             container.innerHTML = `
+                <style>
+                    #terms::-webkit-scrollbar { display: none; }
+                    #terms { -ms-overflow-style: none; scrollbar-width: none; }
+                    #trap-btn { 
+                        position: absolute; 
+                        padding: 6px 12px; 
+                        font-size: 12px; 
+                        background: #d93025; 
+                        color: white;
+                        border: none;
+                        border-radius: 4px; 
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+                        cursor: pointer;
+                        transition: all 0.5s ease;
+                        z-index: 100;
+                        white-space: nowrap;
+                    }
+                </style>
                 <div class="captcha-title">阅读并同意用户协议</div>
                 <div class="captcha-instruction">请务必逐条阅读完以下 1000 条用户隐私及自愿受难协议。</div>
                 <div id="terms" style="height:180px; overflow-y:scroll; background:#111; padding:15px; font-size:12px; color:#888; margin:15px 0; border:1px solid #333; line-height:1.8;">
@@ -894,14 +912,46 @@
                 <div style="display:flex; justify-content: space-between; align-items: center;">
                     <span id="scroll-progress" style="font-size:12px; color:var(--text-sub)">阅读进度：0%</span>
                     <button class="btn-primary" id="accept-btn" disabled style="opacity:0.5">同意并继续 (1000/1000)</button>
-                </div>`;
+                </div>
+                <button id="trap-btn">我接受本条款</button>`;
 
-            const t = document.getElementById('terms'), b = document.getElementById('accept-btn'), p = document.getElementById('scroll-progress'), content = document.getElementById('terms-content');
-            const legalese = ["用户同意在登录期间放弃呼吸的主动权。", "Google（地狱版）有权在任何时刻向用户索要五彩斑斓的黑。", "若用户在该关卡停留超过 5 分钟，视为自愿捐献其社交账号给 AI 托管。", "本协议第 N 条永远优先于第 N-1 条，除非第 N 条是错的。", "用户承认自己不是机器人，但愿意接受机器人的统治。"];
+            const t = document.getElementById('terms'), b = document.getElementById('accept-btn'), p = document.getElementById('scroll-progress'), content = document.getElementById('terms-content'), trap = document.getElementById('trap-btn');
+            const legalese = [
+                "用户同意在登录期间放弃呼吸的主动权。",
+                "Google（地狱版）有权在任何时刻向用户索要五彩斑斓的黑。",
+                "若用户在该关卡停留超过 5 分钟，视为自愿捐献其社交账号给 AI 托管。",
+                "本协议第 N 条永远优先于第 N-1 条，除非第 N 条是错的。",
+                "用户承认自己不是机器人，但愿意接受机器人的统治。",
+                "用户理解并同意，在阅读此协议时，系统可能会随机删除其手机内的一张表情包。",
+                "本协议的内容会在您阅读的过程中发生量子叠加，导致部分条款在被观察后发生改变。",
+                "您同意将此生所有的验证码收益权无偿转让给本游戏开发者。",
+                "若您在阅读过程中眨眼，则视为放弃对本条款的异议权。",
+                "用户承诺在通过本关后，不会对屏幕进行物理打击。",
+                "若用户试图通过悬浮按钮直接到达条款尾部而非认真阅读条款，程序有权让用户重新阅读条款。",
+                "如果您感到头晕眼花，那是正常的，这代表验证码正在注入您的灵魂。",
+                "本协议的最终解释权归‘路西法的验证码办公室’所有。",
+                "一旦点击‘同意’，您的鼠标左键将有 0.01145141919810% 的几率永久变成右键。",
+                "用户在此确认，即使看不清协议内容，也会假装已经完全理解。"
+            ];
             let html = "<strong>《地狱验证码服务协议 v6.6.6》</strong><br><br>";
             for (let i = 1; i <= 1000; i++) { html += `第 ${i} 条：${legalese[i % legalese.length]}<br><br>`; }
-            html += "<hr><strong>恭喜你，你竟然真的划到了底。现在你可以点击同意了。</strong>";
+            html += "<hr><strong>恭喜你，你划到了底部。现在你可以点击同意了。</strong>";
             content.innerHTML = html;
+
+            const moveTrap = () => {
+                const maxX = container.clientWidth - trap.offsetWidth;
+                const maxY = container.clientHeight - trap.offsetHeight;
+                trap.style.left = Math.max(0, Math.random() * maxX) + 'px';
+                trap.style.top = Math.max(0, Math.random() * maxY) + 'px';
+            };
+            moveTrap();
+            const trapIv = setInterval(moveTrap, 3000);
+            activeIntervals.push(trapIv);
+
+            trap.onclick = () => {
+                t.scrollTop = 0;
+                alert("检测到跳过行为！由于您未按规定逐条阅读，协议已重置。请从第一条重新开始阅读。");
+            };
 
             t.onscroll = () => {
                 const scrollPercent = Math.floor((t.scrollTop / (t.scrollHeight - t.clientHeight)) * 100);
@@ -946,10 +996,38 @@
             };
             input.focus();
         },
-        // 关卡 13: 斯图普效应
+        // 关卡 13: 高频乱序逻辑键盘
         function() {
-            container.innerHTML = `<div class="captcha-title">色彩干扰</div><div class="captcha-instruction">请点击表达了 <strong style="color:red">蓝色</strong> 这个字面意思的按钮。</div><div style="display:flex; justify-content:center; gap:20px; margin-top:30px;"><button class="btn-primary math-btn" style="background:#3c4043; color:blue; font-size:20px;">红色</button><button class="btn-primary math-btn" id="s-correct" style="background:#3c4043; color:red; font-size:20px;">蓝色</button><button class="btn-primary math-btn" style="background:#3c4043; color:green; font-size:20px;">黄色</button></div>`;
-            document.querySelectorAll('.math-btn').forEach(b => b.onclick = (e) => { if(e.target.id === 's-correct') { _3dD_92kdD2334 = true; passLevel(); } else window.triggerRisk(); });
+            const target = [3, 8, 1, 4];
+            let progress = 0;
+            container.innerHTML = `
+                <div class="captcha-title">高频动态校验</div>
+                <div class="captcha-instruction">请依次输入序列：<strong style="color:var(--btn-bg)">${target.join('-')}</strong><br><span style="font-size:12px; color:var(--text-sub)">(警告：按键布局每 0.7s 强制重排，错选将立即判定为脚本)</span></div>
+                <div class="grid-3x3" id="k-grid" style="width:240px; margin:20px auto;"></div>
+                <div id="k-status" style="text-align:center; font-family:monospace; font-size:18px; color:var(--btn-bg); letter-spacing:4px;">_ _ _ _</div>
+            `;
+            const grid = document.getElementById('k-grid'), status = document.getElementById('k-status');
+            const render = () => {
+                grid.innerHTML = '';
+                const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+                nums.forEach(n => {
+                    const d = document.createElement('div');
+                    d.className = 'grid-item'; d.innerText = n;
+                    d.style.fontSize = '20px';
+                    d.onclick = () => {
+                        if(n === target[progress]) {
+                            progress++;
+                            let display = target.slice(0, progress).join(' ') + ' ' + '_ '.repeat(4 - progress);
+                            status.innerText = display.trim();
+                            if(progress === 4) { _3dD_92kdD2334 = true; passLevel(); }
+                            else render();
+                        } else window.triggerRisk(false);
+                    };
+                    grid.appendChild(d);
+                });
+            };
+            render();
+            activeIntervals.push(setInterval(render, 1000));
         },
         // 关卡 14: 透明幽灵
         function() {
