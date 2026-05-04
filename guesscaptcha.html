@@ -478,7 +478,7 @@
         // 关卡 1: 右键滑块
         function() {
             // 已移除局部的 startTime = Date.now();
-            container.innerHTML = `<div class="captcha-title">滑动验证</div><div class="captcha-instruction">请拖动滑块完成验证。</div><div class="slider-track" id="slider-track"><div class="slider-bg" id="slider-bg"></div><div class="slider-btn" id="slider-btn">⋙</div></div>`;
+            container.innerHTML = `<div class="captcha-title">滑动验证</div><div class="captcha-instruction">请用右键拖动滑块完成验证。</div><div class="slider-track" id="slider-track"><div class="slider-bg" id="slider-bg"></div><div class="slider-btn" id="slider-btn">⋙</div></div>`;
             let btn = document.getElementById('slider-btn'), bg = document.getElementById('slider-bg'), track = document.getElementById('slider-track');
             let isDragging = false, startX = 0;
             btn.onmousedown = (e) => {
@@ -1027,7 +1027,7 @@
                 });
             };
             render();
-            activeIntervals.push(setInterval(render, 1000));
+            activeIntervals.push(setInterval(render, 700));
         },
         // 关卡 14: 透明幽灵
         function() {
